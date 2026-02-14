@@ -105,27 +105,28 @@ my-mandalateu/
 ## 개발 단계
 
 ### Phase 1: 프로젝트 설정 및 기본 구조
-- [ ] Expo 프로젝트 초기화
-- [ ] TypeScript 설정
-- [ ] 폴더 구조 생성
-- [ ] 네비게이션 설정
-- [ ] 기본 테마 및 스타일 시스템
+- [x] Expo 프로젝트 초기화
+- [x] TypeScript 설정
+- [x] 폴더 구조 생성
+- [x] 네비게이션 설정 (React Navigation Stack)
+- [x] 기본 테마 및 스타일 시스템 (colors.ts, theme.ts)
 
 ### Phase 2: 만다라트 그리드 UI
-- [ ] 3x3 그리드 컴포넌트 개발
-- [ ] 셀 컴포넌트 개발
+- [x] 3x3 그리드 컴포넌트 개발 (BlockGrid)
+- [x] 셀 컴포넌트 개발 (BlockCard - 진행률바, 도트 인디케이터, 중앙 블록 강조)
 - [ ] 그리드 확장/축소 애니메이션
-- [ ] 터치 인터랙션 구현
+- [x] 터치 인터랙션 구현 (onPress → BlockDetail 이동, onLongPress)
 
 ### Phase 3: TODO 기능
-- [ ] TODO 데이터 모델 설계
-- [ ] CRUD 기능 구현
-- [ ] 체크박스 및 완료 상태 관리
-- [ ] 로컬 데이터 저장
+- [x] TODO 데이터 모델 설계 (types/mandalart.ts)
+- [x] 완료 상태 토글 (toggleCell), 제목 수정 액션 (Zustand store)
+- [x] 체크박스 및 완료 상태 관리
+- [ ] CRUD 전체 구현 (셀/블록 생성·삭제)
+- [x] 로컬 데이터 저장 (AsyncStorage 연동 - zustand persist)
 
 ### Phase 4: 추가 기능
-- [ ] 프로젝트 관리 기능
-- [ ] 통계 대시보드
+- [ ] 프로젝트 관리 기능 (여러 프로젝트)
+- [x] 통계 대시보드 (DashboardScreen 구현)
 - [ ] 다크모드
 - [ ] 알림 기능
 
@@ -136,12 +137,14 @@ my-mandalateu/
 
 ## 다음 단계
 
-1. Expo 프로젝트 초기화
-2. 기본 폴더 구조 생성
-3. 만다라트 데이터 모델 설계
-4. 첫 번째 그리드 UI 프로토타입 개발
+1. ~~BlockDetailScreen 구현 (블록 내 9셀 상세 뷰 + 완료 토글)~~ ✅
+2. ~~AsyncStorage 연동으로 데이터 영속화~~ ✅
+3. ~~DashboardScreen 통계 구현~~ ✅
+4. CRUD 기능 완성 (셀/블록 생성·삭제)
+5. 다크모드 테마 전환
+6. 프로젝트 관리 기능 (여러 프로젝트 생성/전환)
 
 ---
 
 **작성일**: 2026-02-08
-**상태**: 계획 단계
+**상태**: 개발 중 (Phase 3 완료, Phase 4 진행 중)

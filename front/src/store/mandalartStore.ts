@@ -1,12 +1,11 @@
 /**
  * 만다라트 Zustand 스토어
- * Mock 데이터 포함
  */
 
 import { create } from 'zustand';
 import { MandalartProject } from '../types/mandalart';
 
-// ─── Mock 데이터 ───────────────────────────────────────────────────────────────
+// ─── Mock 데이터 (초기 기본값) ──────────────────────────────────────────────────
 
 const MOCK_PROJECT: MandalartProject = {
   id: 'project-1',
