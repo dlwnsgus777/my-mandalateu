@@ -1,0 +1,21 @@
+{
+  "name": "my-mandalateu",
+  "version": "1.0.0",
+  "description": "만다라트 계획",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlwnsgus777/my-mandalateu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dlwnsgus777/my-mandalateu/issues"
+  },
+  "homepage": "https://github.com/dlwnsgus777/my-mandalateu#readme"
+}
