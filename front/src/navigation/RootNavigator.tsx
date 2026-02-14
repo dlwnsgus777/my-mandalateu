@@ -13,6 +13,7 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { BlockDetailScreen } from '../screens/BlockDetailScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { CreateProjectScreen } from '../screens/CreateProjectScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -58,6 +59,13 @@ export const RootNavigator = () => {
           component={SettingsScreen}
           options={{
             title: '설정',
+          }}
+        />
+        <Stack.Screen
+          name="CreateProject"
+          component={CreateProjectScreen}
+          options={{
+            title: '새 프로젝트',
           }}
         />
       </Stack.Navigator>

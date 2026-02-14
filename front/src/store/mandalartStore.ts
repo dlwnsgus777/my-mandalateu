@@ -169,75 +169,182 @@ const MOCK_PROJECT: MandalartProject = {
   ],
 };
 
+// ─── 유틸 ─────────────────────────────────────────────────────────────────────
+
+const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+
+const createBlankProject = (title: string, coreGoal: string = ''): MandalartProject => {
+  const id = genId();
+  const now = new Date().toISOString();
+  return {
+    id,
+    title,
+    createdAt: now,
+    updatedAt: now,
+    blocks: Array.from({ length: 9 }, (_, blockPos) => ({
+      id: `${id}-b${blockPos}`,
+      position: blockPos,
+      goalTitle: blockPos === 4 ? coreGoal : '',
+      cells: Array.from({ length: 9 }, (_, cellPos) => ({
+        id: `${id}-b${blockPos}c${cellPos}`,
+        position: cellPos,
+        isCenter: cellPos === 4,
+        title: blockPos === 4 && cellPos === 4 ? coreGoal : '',
+        completed: false,
+      })),
+    })),
+  };
+};
+
+// currentProject를 업데이트하고 projects 배열도 동기화하는 헬퍼
+const applyToProject = (
+  state: MandalartState,
+  updater: (p: MandalartProject) => MandalartProject
+): Partial<MandalartState> => {
+  if (!state.currentProject) return {};
+  const updated = updater(state.currentProject);
+  return {
+    currentProject: updated,
+    projects: state.projects.map((p) => (p.id === updated.id ? updated : p)),
+  };
+};
+
 // ─── 스토어 타입 ───────────────────────────────────────────────────────────────
 
 interface MandalartState {
+  projects: MandalartProject[];
   currentProject: MandalartProject | null;
+  // 실행 과제
   toggleCell: (blockId: string, cellId: string) => void;
-  updateBlockTitle: (blockId: string, title: string) => void;
   updateCellTitle: (blockId: string, cellId: string, title: string) => void;
+  // 목표 편집 (데이터 동기화 포함)
+  updateCoreGoal: (title: string) => void;
+  updateSubGoal: (cellPosition: number, title: string) => void;
+  // 프로젝트
+  updateProjectTitle: (title: string) => void;
+  createProject: (title: string, coreGoal?: string) => void;
+  switchProject: (projectId: string) => void;
 }
 
 // ─── 스토어 ───────────────────────────────────────────────────────────────────
 
 export const useMandalartStore = create<MandalartState>()((set) => ({
+  projects: [MOCK_PROJECT],
   currentProject: MOCK_PROJECT,
 
+  // 실행 과제 완료 토글
   toggleCell: (blockId, cellId) =>
-    set((state) => {
-      if (!state.currentProject) return state;
-      return {
-        currentProject: {
-          ...state.currentProject,
-          updatedAt: new Date().toISOString(),
-          blocks: state.currentProject.blocks.map((block) =>
-            block.id === blockId
-              ? {
-                  ...block,
-                  cells: block.cells.map((cell) =>
-                    cell.id === cellId
-                      ? { ...cell, completed: !cell.completed }
-                      : cell
-                  ),
-                }
-              : block
-          ),
-        },
-      };
-    }),
+    set((state) =>
+      applyToProject(state, (p) => ({
+        ...p,
+        updatedAt: new Date().toISOString(),
+        blocks: p.blocks.map((block) =>
+          block.id === blockId
+            ? {
+                ...block,
+                cells: block.cells.map((cell) =>
+                  cell.id === cellId ? { ...cell, completed: !cell.completed } : cell
+                ),
+              }
+            : block
+        ),
+      }))
+    ),
 
-  updateBlockTitle: (blockId, title) =>
-    set((state) => {
-      if (!state.currentProject) return state;
-      return {
-        currentProject: {
-          ...state.currentProject,
-          updatedAt: new Date().toISOString(),
-          blocks: state.currentProject.blocks.map((block) =>
-            block.id === blockId ? { ...block, goalTitle: title } : block
-          ),
-        },
-      };
-    }),
-
+  // 실행 과제 제목 편집
   updateCellTitle: (blockId, cellId, title) =>
+    set((state) =>
+      applyToProject(state, (p) => ({
+        ...p,
+        updatedAt: new Date().toISOString(),
+        blocks: p.blocks.map((block) =>
+          block.id === blockId
+            ? {
+                ...block,
+                cells: block.cells.map((cell) =>
+                  cell.id === cellId ? { ...cell, title } : cell
+                ),
+              }
+            : block
+        ),
+      }))
+    ),
+
+  // 핵심 목표 편집 (중앙 블록의 중앙 셀)
+  updateCoreGoal: (title) =>
+    set((state) =>
+      applyToProject(state, (p) => ({
+        ...p,
+        updatedAt: new Date().toISOString(),
+        blocks: p.blocks.map((block) =>
+          block.position === 4
+            ? {
+                ...block,
+                goalTitle: title,
+                cells: block.cells.map((cell) =>
+                  cell.isCenter ? { ...cell, title } : cell
+                ),
+              }
+            : block
+        ),
+      }))
+    ),
+
+  // 세부 목표 편집: 중앙 블록의 해당 셀 + 대응 블록의 goalTitle·중앙 셀 동기화
+  updateSubGoal: (cellPosition, title) =>
+    set((state) =>
+      applyToProject(state, (p) => ({
+        ...p,
+        updatedAt: new Date().toISOString(),
+        blocks: p.blocks.map((block) => {
+          // 중앙 블록: 해당 위치의 셀 제목 업데이트
+          if (block.position === 4) {
+            return {
+              ...block,
+              cells: block.cells.map((cell) =>
+                cell.position === cellPosition ? { ...cell, title } : cell
+              ),
+            };
+          }
+          // 대응 블록: goalTitle + 중앙 셀 동기화
+          if (block.position === cellPosition) {
+            return {
+              ...block,
+              goalTitle: title,
+              cells: block.cells.map((cell) =>
+                cell.isCenter ? { ...cell, title } : cell
+              ),
+            };
+          }
+          return block;
+        }),
+      }))
+    ),
+
+  // 프로젝트 제목 편집
+  updateProjectTitle: (title) =>
+    set((state) =>
+      applyToProject(state, (p) => ({
+        ...p,
+        title,
+        updatedAt: new Date().toISOString(),
+      }))
+    ),
+
+  // 새 프로젝트 생성
+  createProject: (title, coreGoal = '') =>
     set((state) => {
-      if (!state.currentProject) return state;
+      const newProject = createBlankProject(title, coreGoal);
       return {
-        currentProject: {
-          ...state.currentProject,
-          updatedAt: new Date().toISOString(),
-          blocks: state.currentProject.blocks.map((block) =>
-            block.id === blockId
-              ? {
-                  ...block,
-                  cells: block.cells.map((cell) =>
-                    cell.id === cellId ? { ...cell, title } : cell
-                  ),
-                }
-              : block
-          ),
-        },
+        projects: [...state.projects, newProject],
+        currentProject: newProject,
       };
+    }),
+
+  // 프로젝트 전환
+  switchProject: (projectId) =>
+    set((state) => {
+      const project = state.projects.find((p) => p.id === projectId);
+      return project ? { currentProject: project } : state;
     }),
 }));

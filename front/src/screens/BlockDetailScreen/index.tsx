@@ -37,11 +37,14 @@ export const BlockDetailScreen = () => {
   const currentProject = useMandalartStore((state) => state.currentProject);
   const toggleCell = useMandalartStore((state) => state.toggleCell);
   const updateCellTitle = useMandalartStore((state) => state.updateCellTitle);
+  const updateCoreGoal = useMandalartStore((state) => state.updateCoreGoal);
+  const updateSubGoal = useMandalartStore((state) => state.updateSubGoal);
 
   const [editingCell, setEditingCell] = useState<MandalartCell | null>(null);
   const [editTitle, setEditTitle] = useState('');
 
   const block = currentProject?.blocks.find((b) => b.id === blockId);
+  const isCenterBlock = block?.position === 4;
 
   const nonCenterCells = block?.cells.filter((c) => !c.isCenter) ?? [];
   const completedCount = nonCenterCells.filter((c) => c.completed).length;
@@ -49,13 +52,17 @@ export const BlockDetailScreen = () => {
 
   useLayoutEffect(() => {
     if (!block) return;
-    navigation.setOptions({
-      title: block.goalTitle,
-      headerRight: () => (
-        <Text style={styles.headerRight}>{completedCount}/8</Text>
-      ),
-    });
-  }, [navigation, block, completedCount]);
+    if (isCenterBlock) {
+      navigation.setOptions({ title: '핵심 목표 설정' });
+    } else {
+      navigation.setOptions({
+        title: block.goalTitle || '세부 목표',
+        headerRight: () => (
+          <Text style={styles.headerRight}>{completedCount}/8</Text>
+        ),
+      });
+    }
+  }, [navigation, block, isCenterBlock, completedCount]);
 
   if (!block) {
     return (
@@ -68,24 +75,42 @@ export const BlockDetailScreen = () => {
   const sortedCells = [...block.cells].sort((a, b) => a.position - b.position);
   const rows = [sortedCells.slice(0, 3), sortedCells.slice(3, 6), sortedCells.slice(6, 9)];
 
-  // 블록 네비게이션 (중앙 블록 제외)
+  // 일반 블록: 블록 간 네비게이션 (중앙 블록 제외)
   const allBlocks = [...(currentProject?.blocks ?? [])].sort((a, b) => a.position - b.position);
   const navigableBlocks = allBlocks.filter((b) => b.position !== 4);
   const navIndex = navigableBlocks.findIndex((b) => b.id === blockId);
   const prevBlock = navIndex > 0 ? navigableBlocks[navIndex - 1] : null;
   const nextBlock = navIndex < navigableBlocks.length - 1 ? navigableBlocks[navIndex + 1] : null;
 
+  // 셀 탭 핸들러
   const handleCellPress = (cell: MandalartCell) => {
-    if (cell.isCenter) return;
-    setEditingCell(cell);
-    setEditTitle(cell.title);
+    if (isCenterBlock) {
+      // 중앙 블록: 모든 셀 편집 가능 (핵심 목표 또는 세부 목표)
+      setEditingCell(cell);
+      setEditTitle(cell.title);
+    } else {
+      // 일반 블록: 중앙 셀은 편집 불가, 나머지만 편집
+      if (cell.isCenter) return;
+      setEditingCell(cell);
+      setEditTitle(cell.title);
+    }
   };
 
   const handleSaveEdit = () => {
     if (!editingCell) return;
     const trimmed = editTitle.trim();
-    if (trimmed) {
-      updateCellTitle(blockId, editingCell.id, trimmed);
+
+    if (isCenterBlock) {
+      if (editingCell.isCenter) {
+        // 핵심 목표 편집
+        if (trimmed) updateCoreGoal(trimmed);
+      } else {
+        // 세부 목표 편집 → 대응 블록과 동기화
+        if (trimmed !== undefined) updateSubGoal(editingCell.position, trimmed);
+      }
+    } else {
+      // 일반 블록: 실행 과제 제목 편집
+      if (trimmed) updateCellTitle(blockId, editingCell.id, trimmed);
     }
     setEditingCell(null);
   };
@@ -94,6 +119,100 @@ export const BlockDetailScreen = () => {
     navigation.replace('BlockDetail', { blockId: targetId, blockTitle: targetTitle });
   };
 
+  // ── 중앙 블록 UI ──────────────────────────────────────────────────────────
+  if (isCenterBlock) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.sectionHint}>
+            🎯 핵심 목표와 8개의 세부 목표를 입력하세요
+          </Text>
+
+          <View style={styles.grid}>
+            {rows.map((row, rowIdx) => (
+              <View key={rowIdx} style={styles.row}>
+                {row.map((cell) => (
+                  <TouchableOpacity
+                    key={cell.id}
+                    style={[
+                      styles.cell,
+                      cell.isCenter ? styles.coreGoalCell : styles.subGoalCell,
+                      !cell.title && styles.emptyCell,
+                    ]}
+                    onPress={() => handleCellPress(cell)}
+                    activeOpacity={0.7}
+                  >
+                    {cell.isCenter && (
+                      <Text style={styles.centerIcon}>🎯</Text>
+                    )}
+                    <Text
+                      style={[
+                        cell.isCenter ? styles.coreGoalText : styles.subGoalText,
+                        !cell.title && styles.placeholderText,
+                      ]}
+                      numberOfLines={4}
+                    >
+                      {cell.title || (cell.isCenter ? '핵심 목표 입력' : '세부 목표 입력')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.hintText}>셀을 탭하여 목표를 입력하세요</Text>
+        </ScrollView>
+
+        {/* 편집 모달 */}
+        <Modal
+          visible={!!editingCell}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setEditingCell(null)}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalOverlay}
+          >
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>
+                {editingCell?.isCenter ? '🎯 핵심 목표' : '세부 목표'}
+              </Text>
+              <TextInput
+                style={styles.modalInput}
+                value={editTitle}
+                onChangeText={setEditTitle}
+                autoFocus
+                placeholder={editingCell?.isCenter ? '핵심 목표를 입력하세요' : '세부 목표를 입력하세요'}
+                maxLength={50}
+                returnKeyType="done"
+                onSubmitEditing={handleSaveEdit}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setEditingCell(null)}
+                >
+                  <Text style={styles.cancelButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={handleSaveEdit}
+                >
+                  <Text style={styles.saveButtonText}>저장</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
+      </SafeAreaView>
+    );
+  }
+
+  // ── 일반 블록 UI ──────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -119,7 +238,7 @@ export const BlockDetailScreen = () => {
                   <View key={cell.id} style={[styles.cell, styles.centerCell]}>
                     <Text style={styles.centerIcon}>🎯</Text>
                     <Text style={styles.centerCellTitle} numberOfLines={4}>
-                      {cell.title}
+                      {cell.title || '세부 목표'}
                     </Text>
                   </View>
                 ) : (
@@ -139,10 +258,14 @@ export const BlockDetailScreen = () => {
                       </Text>
                     </TouchableOpacity>
                     <Text
-                      style={[styles.cellTitle, cell.completed && styles.completedText]}
+                      style={[
+                        styles.cellTitle,
+                        cell.completed && styles.completedText,
+                        !cell.title && styles.placeholderText,
+                      ]}
                       numberOfLines={4}
                     >
-                      {cell.title}
+                      {cell.title || '탭하여 입력'}
                     </Text>
                   </TouchableOpacity>
                 )
@@ -151,7 +274,6 @@ export const BlockDetailScreen = () => {
           ))}
         </View>
 
-        {/* 힌트 */}
         <Text style={styles.hintText}>셀을 탭하여 제목 수정  ·  체크박스로 완료 처리</Text>
 
         {/* 블록 간 네비게이션 */}
@@ -162,7 +284,7 @@ export const BlockDetailScreen = () => {
             disabled={!prevBlock}
           >
             <Text style={[styles.navButtonText, !prevBlock && styles.navButtonTextDisabled]}>
-              ← {prevBlock?.goalTitle ?? '이전'}
+              ← {prevBlock?.goalTitle || '이전'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -171,7 +293,7 @@ export const BlockDetailScreen = () => {
             disabled={!nextBlock}
           >
             <Text style={[styles.navButtonText, !nextBlock && styles.navButtonTextDisabled]}>
-              {nextBlock?.goalTitle ?? '다음'} →
+              {nextBlock?.goalTitle || '다음'} →
             </Text>
           </TouchableOpacity>
         </View>
@@ -242,6 +364,13 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     color: Colors.light.textSecondary,
   },
+  sectionHint: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.md,
+    lineHeight: 20,
+  },
 
   // 진행률 카드
   progressCard: {
@@ -291,6 +420,43 @@ const styles = StyleSheet.create({
     minHeight: 90,
     ...Shadow.sm,
   },
+
+  // 중앙 블록 전용 셀 스타일
+  coreGoalCell: {
+    backgroundColor: Colors.light.centerBlockBackground,
+    borderColor: Colors.light.centerBlockBorder,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subGoalCell: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F4FF',
+    borderColor: '#B3C4F0',
+  },
+  emptyCell: {
+    borderStyle: 'dashed',
+    opacity: 0.7,
+  },
+  coreGoalText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    color: Colors.light.primary,
+    textAlign: 'center',
+  },
+  subGoalText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    color: '#3B5BBD',
+    textAlign: 'center',
+  },
+  placeholderText: {
+    color: Colors.light.textDisabled,
+    fontWeight: FontWeight.regular,
+  },
+
+  // 일반 블록 셀 스타일
   centerCell: {
     backgroundColor: Colors.light.centerBlockBackground,
     borderColor: Colors.light.centerBlockBorder,
