@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { BorderRadius } from '../../constants/theme';
 
@@ -17,13 +17,28 @@ const getProgressColor = (progress: number): string => {
 export const ProgressBar: React.FC<ProgressBarProps> = ({ progress, color }) => {
   const clampedProgress = Math.min(1, Math.max(0, progress));
   const barColor = color ?? getProgressColor(clampedProgress);
+  const widthAnim = useRef(new Animated.Value(clampedProgress)).current;
+
+  useEffect(() => {
+    Animated.timing(widthAnim, {
+      toValue: clampedProgress,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [clampedProgress]);
 
   return (
     <View style={styles.track}>
-      <View
+      <Animated.View
         style={[
           styles.fill,
-          { width: `${clampedProgress * 100}%`, backgroundColor: barColor },
+          {
+            width: widthAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0%', '100%'],
+            }),
+            backgroundColor: barColor,
+          },
         ]}
       />
     </View>

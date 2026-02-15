@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,12 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -36,6 +42,19 @@ export const HomeScreen = () => {
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
+
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.95);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+    scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+  }, []);
+
+  const entranceStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   if (!currentProject) {
     return (
@@ -75,6 +94,7 @@ export const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Animated.View style={[{ flex: 1 }, entranceStyle]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -130,6 +150,7 @@ export const HomeScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </Animated.View>
 
       {/* 프로젝트 제목 편집 모달 */}
       <Modal

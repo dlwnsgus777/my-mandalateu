@@ -275,14 +275,14 @@ src/
 
 ### Phase 3 - 애니메이션
 
-- [ ] `HomeScreen` 화면 진입 Fade In + Scale 애니메이션
-- [ ] `BlockDetailScreen` 화면 진입 Fade In + Scale 애니메이션
-- [ ] `DashboardScreen` 화면 진입 Fade In + Scale 애니메이션
-- [ ] `BlockCard` 탭 시 Scale Up (1.0 → 1.05) 효과
-- [ ] `BlockGrid` 블록 순차적 Fade In (delay: index * 50ms)
-- [ ] `BlockDetailScreen` 체크박스 완료 시 Scale + Bounce 애니메이션
-- [ ] 완료 셀 배경색 전환 애니메이션 (white → #E7F5E7)
-- [ ] `ProgressBar` 값 변경 시 width 부드러운 전환 (withTiming 300ms)
+- [x] `HomeScreen` 화면 진입 Fade In + Scale 애니메이션
+- [x] `BlockDetailScreen` 화면 진입 Fade In + Scale 애니메이션
+- [x] `DashboardScreen` 화면 진입 Fade In + Scale 애니메이션
+- [x] `BlockCard` 탭 시 Scale Up (1.0 → 1.05) 효과
+- [x] `BlockGrid` 블록 순차적 Fade In (delay: index * 50ms)
+- [x] `BlockDetailScreen` 체크박스 완료 시 Scale + Bounce 애니메이션
+- [x] 완료 셀 배경색 전환 애니메이션 (white → #E7F5E7)
+- [x] `ProgressBar` 값 변경 시 width 부드러운 전환 (withTiming 300ms)
 
 ### Phase 4 - 제스처
 

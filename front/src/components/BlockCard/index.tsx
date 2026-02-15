@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { MandalartBlock } from '../../types/mandalart';
 import { ProgressBar } from '../ProgressBar';
 import { Colors } from '../../constants/colors';
@@ -27,39 +28,57 @@ export const BlockCard: React.FC<BlockCardProps> = ({
   const completedCount = nonCenterCells.filter((c) => c.completed).length;
   const progress = nonCenterCells.length > 0 ? completedCount / nonCenterCells.length : 0;
 
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(1.05, { damping: 15, stiffness: 300 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
+
   return (
-    <TouchableOpacity
-      style={[styles.card, isCenterBlock && styles.centerCard]}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      activeOpacity={0.75}
-    >
-      {isCenterBlock && (
-        <Text style={styles.centerIcon}>🎯</Text>
-      )}
-
-      <Text
-        style={[styles.title, isCenterBlock && styles.centerTitle]}
-        numberOfLines={2}
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        style={[styles.card, isCenterBlock && styles.centerCard]}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
       >
-        {block.goalTitle}
-      </Text>
+        {isCenterBlock && (
+          <Text style={styles.centerIcon}>🎯</Text>
+        )}
 
-      <ProgressBar progress={progress} />
+        <Text
+          style={[styles.title, isCenterBlock && styles.centerTitle]}
+          numberOfLines={2}
+        >
+          {block.goalTitle}
+        </Text>
 
-      <View style={styles.footer}>
-        <Text style={styles.countText}>{completedCount}/8</Text>
-      </View>
+        <ProgressBar progress={progress} />
 
-      <View style={styles.dots}>
-        {nonCenterCells.map((cell) => (
-          <View
-            key={cell.id}
-            style={[styles.dot, cell.completed && styles.dotCompleted]}
-          />
-        ))}
-      </View>
-    </TouchableOpacity>
+        <View style={styles.footer}>
+          <Text style={styles.countText}>{completedCount}/8</Text>
+        </View>
+
+        <View style={styles.dots}>
+          {nonCenterCells.map((cell) => (
+            <View
+              key={cell.id}
+              style={[styles.dot, cell.completed && styles.dotCompleted]}
+            />
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 

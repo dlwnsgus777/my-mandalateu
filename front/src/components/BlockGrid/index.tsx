@@ -1,5 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing,
+} from 'react-native-reanimated';
 import { MandalartBlock } from '../../types/mandalart';
 import { BlockCard } from '../BlockCard';
 import { Layout } from '../../constants/theme';
@@ -10,12 +17,38 @@ interface BlockGridProps {
   onBlockLongPress?: (blockId: string) => void;
 }
 
+const AnimatedCell: React.FC<{ flatIndex: number; children: React.ReactNode }> = ({
+  flatIndex,
+  children,
+}) => {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(12);
+
+  useEffect(() => {
+    const delay = flatIndex * 50;
+    opacity.value = withDelay(
+      delay,
+      withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) }),
+    );
+    translateY.value = withDelay(
+      delay,
+      withTiming(0, { duration: 300, easing: Easing.out(Easing.ease) }),
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return <Animated.View style={[styles.cell, animStyle]}>{children}</Animated.View>;
+};
+
 export const BlockGrid: React.FC<BlockGridProps> = ({
   blocks,
   onBlockPress,
   onBlockLongPress,
 }) => {
-  // 3x3 행으로 분리
   const sorted = [...blocks].sort((a, b) => a.position - b.position);
   const rows = [sorted.slice(0, 3), sorted.slice(3, 6), sorted.slice(6, 9)];
 
@@ -23,8 +56,8 @@ export const BlockGrid: React.FC<BlockGridProps> = ({
     <View style={styles.grid}>
       {rows.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.row}>
-          {row.map((block) => (
-            <View key={block.id} style={styles.cell}>
+          {row.map((block, colIndex) => (
+            <AnimatedCell key={block.id} flatIndex={rowIndex * 3 + colIndex}>
               <BlockCard
                 block={block}
                 isCenterBlock={block.position === 4}
@@ -33,7 +66,7 @@ export const BlockGrid: React.FC<BlockGridProps> = ({
                   onBlockLongPress ? () => onBlockLongPress(block.id) : undefined
                 }
               />
-            </View>
+            </AnimatedCell>
           ))}
         </View>
       ))}

@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,15 @@ import {
   StyleSheet,
   Switch,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withSequence,
+  interpolateColor,
+  Easing,
+} from 'react-native-reanimated';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -32,6 +41,113 @@ import {
 type BlockDetailRouteProp = RouteProp<RootStackParamList, 'BlockDetail'>;
 type BlockDetailNavigationProp = StackNavigationProp<RootStackParamList, 'BlockDetail'>;
 
+// ── TaskCell: 체크박스 완료 애니메이션 컴포넌트 ────────────────────────────
+interface TaskCellProps {
+  cell: MandalartCell;
+  onPress: () => void;
+  onToggle: () => void;
+}
+
+const TaskCell: React.FC<TaskCellProps> = React.memo(({ cell, onPress, onToggle }) => {
+  const scaleAnim = useSharedValue(1);
+  const bgProgress = useSharedValue(cell.completed ? 1 : 0);
+  const prevCompleted = React.useRef(cell.completed);
+
+  useEffect(() => {
+    if (cell.completed !== prevCompleted.current) {
+      prevCompleted.current = cell.completed;
+      if (cell.completed) {
+        scaleAnim.value = withSequence(
+          withSpring(1.08, { damping: 6, stiffness: 400 }),
+          withSpring(1, { damping: 10, stiffness: 200 }),
+        );
+        bgProgress.value = withTiming(1, { duration: 300 });
+      } else {
+        bgProgress.value = withTiming(0, { duration: 300 });
+      }
+    }
+  }, [cell.completed]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleAnim.value }],
+    backgroundColor: interpolateColor(
+      bgProgress.value,
+      [0, 1],
+      [Colors.light.cardBackground, '#E7F5E7'],
+    ),
+    borderColor: interpolateColor(
+      bgProgress.value,
+      [0, 1],
+      [Colors.light.border, Colors.light.progressHigh],
+    ),
+  }));
+
+  return (
+    <Animated.View style={[taskCellStyles.cell, animStyle]}>
+      <TouchableOpacity
+        style={taskCellStyles.pressArea}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <TouchableOpacity
+          style={taskCellStyles.checkbox}
+          onPress={onToggle}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Text style={taskCellStyles.checkboxIcon}>
+            {cell.completed ? '✅' : '⬜'}
+          </Text>
+        </TouchableOpacity>
+        <Text
+          style={[
+            taskCellStyles.cellTitle,
+            cell.completed && taskCellStyles.completedText,
+            !cell.title && taskCellStyles.placeholderText,
+          ]}
+          numberOfLines={4}
+        >
+          {cell.title || '탭하여 입력'}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
+
+const taskCellStyles = StyleSheet.create({
+  cell: {
+    flex: 1,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    minHeight: 90,
+    ...Shadow.sm,
+  },
+  pressArea: {
+    flex: 1,
+    padding: Spacing.sm,
+  },
+  checkbox: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  checkboxIcon: {
+    fontSize: 16,
+  },
+  cellTitle: {
+    fontSize: FontSize.xs,
+    color: Colors.light.text,
+    lineHeight: 16,
+  },
+  completedText: {
+    color: Colors.light.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  placeholderText: {
+    color: Colors.light.textDisabled,
+    fontWeight: FontWeight.regular,
+  },
+});
+
+// ── BlockDetailScreen ─────────────────────────────────────────────────────
 export const BlockDetailScreen = () => {
   const navigation = useNavigation<BlockDetailNavigationProp>();
   const route = useRoute<BlockDetailRouteProp>();
@@ -59,6 +175,20 @@ export const BlockDetailScreen = () => {
   // 확장 섹션 - 링크 (로컬 UI 상태)
   const [links, setLinks] = useState<string[]>([]);
   const [linkInput, setLinkInput] = useState('');
+
+  // 화면 진입 애니메이션
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.95);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+    scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+  }, []);
+
+  const entranceStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   const block = currentProject?.blocks.find((b) => b.id === blockId);
   const isCenterBlock = block?.position === 4;
@@ -141,7 +271,6 @@ export const BlockDetailScreen = () => {
       setEditingCell(emptyCell);
       setEditTitle('');
     } else {
-      // 모든 셀이 채워진 경우 첫 번째 셀 편집
       const firstCell = nonCenterCells[0];
       if (firstCell) {
         setEditingCell(firstCell);
@@ -176,48 +305,50 @@ export const BlockDetailScreen = () => {
   if (isCenterBlock) {
     return (
       <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.sectionHint}>
-            🎯 핵심 목표와 8개의 세부 목표를 입력하세요
-          </Text>
+        <Animated.View style={[{ flex: 1 }, entranceStyle]}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.sectionHint}>
+              🎯 핵심 목표와 8개의 세부 목표를 입력하세요
+            </Text>
 
-          <View style={styles.grid}>
-            {rows.map((row, rowIdx) => (
-              <View key={rowIdx} style={styles.row}>
-                {row.map((cell) => (
-                  <TouchableOpacity
-                    key={cell.id}
-                    style={[
-                      styles.cell,
-                      cell.isCenter ? styles.coreGoalCell : styles.subGoalCell,
-                      !cell.title && styles.emptyCell,
-                    ]}
-                    onPress={() => handleCellPress(cell)}
-                    activeOpacity={0.7}
-                  >
-                    {cell.isCenter && (
-                      <Text style={styles.centerIcon}>🎯</Text>
-                    )}
-                    <Text
+            <View style={styles.grid}>
+              {rows.map((row, rowIdx) => (
+                <View key={rowIdx} style={styles.row}>
+                  {row.map((cell) => (
+                    <TouchableOpacity
+                      key={cell.id}
                       style={[
-                        cell.isCenter ? styles.coreGoalText : styles.subGoalText,
-                        !cell.title && styles.placeholderText,
+                        styles.cell,
+                        cell.isCenter ? styles.coreGoalCell : styles.subGoalCell,
+                        !cell.title && styles.emptyCell,
                       ]}
-                      numberOfLines={4}
+                      onPress={() => handleCellPress(cell)}
+                      activeOpacity={0.7}
                     >
-                      {cell.title || (cell.isCenter ? '핵심 목표 입력' : '세부 목표 입력')}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))}
-          </View>
+                      {cell.isCenter && (
+                        <Text style={styles.centerIcon}>🎯</Text>
+                      )}
+                      <Text
+                        style={[
+                          cell.isCenter ? styles.coreGoalText : styles.subGoalText,
+                          !cell.title && styles.placeholderText,
+                        ]}
+                        numberOfLines={4}
+                      >
+                        {cell.title || (cell.isCenter ? '핵심 목표 입력' : '세부 목표 입력')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+            </View>
 
-          <Text style={styles.hintText}>셀을 탭하여 목표를 입력하세요</Text>
-        </ScrollView>
+            <Text style={styles.hintText}>셀을 탭하여 목표를 입력하세요</Text>
+          </ScrollView>
+        </Animated.View>
 
         {/* 편집 모달 */}
         <Modal
@@ -268,200 +399,182 @@ export const BlockDetailScreen = () => {
   // ── 일반 블록 UI ──────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 컨텍스트 카드 - 전체 구조에서 현재 블록 위치 */}
-        <ContextCard
-          blockPosition={block.position}
-          blockTitle={block.goalTitle}
-          progress={progress}
-          completedCount={completedCount}
-        />
-
-        {/* 진행률 카드 */}
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>실행 과제</Text>
-            <Text style={styles.progressCount}>{completedCount} / 8 완료</Text>
-          </View>
-          <ProgressBar progress={progress} />
-          <Text style={styles.progressPercent}>{Math.round(progress * 100)}%</Text>
-        </View>
-
-        {/* 3x3 셀 그리드 */}
-        <View style={styles.grid}>
-          {rows.map((row, rowIdx) => (
-            <View key={rowIdx} style={styles.row}>
-              {row.map((cell) =>
-                cell.isCenter ? (
-                  <View key={cell.id} style={[styles.cell, styles.centerCell]}>
-                    <Text style={styles.centerIcon}>🎯</Text>
-                    <Text style={styles.centerCellTitle} numberOfLines={4}>
-                      {cell.title || '세부 목표'}
-                    </Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    key={cell.id}
-                    style={[styles.cell, cell.completed && styles.completedCell]}
-                    onPress={() => handleCellPress(cell)}
-                    activeOpacity={0.7}
-                  >
-                    <TouchableOpacity
-                      style={styles.checkbox}
-                      onPress={() => toggleCell(blockId, cell.id)}
-                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    >
-                      <Text style={styles.checkboxIcon}>
-                        {cell.completed ? '✅' : '⬜'}
-                      </Text>
-                    </TouchableOpacity>
-                    <Text
-                      style={[
-                        styles.cellTitle,
-                        cell.completed && styles.completedText,
-                        !cell.title && styles.placeholderText,
-                      ]}
-                      numberOfLines={4}
-                    >
-                      {cell.title || '탭하여 입력'}
-                    </Text>
-                  </TouchableOpacity>
-                )
-              )}
-            </View>
-          ))}
-        </View>
-
-        <Text style={styles.hintText}>셀을 탭하여 제목 수정  ·  체크박스로 완료 처리</Text>
-
-        {/* 블록 간 네비게이션 */}
-        <View style={styles.blockNav}>
-          <TouchableOpacity
-            style={[styles.navButton, !prevBlock && styles.navButtonDisabled]}
-            onPress={() => prevBlock && handleNavigate(prevBlock.id, prevBlock.goalTitle)}
-            disabled={!prevBlock}
-          >
-            <Text style={[styles.navButtonText, !prevBlock && styles.navButtonTextDisabled]}>
-              ← {prevBlock?.goalTitle || '이전'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navButton, !nextBlock && styles.navButtonDisabled]}
-            onPress={() => nextBlock && handleNavigate(nextBlock.id, nextBlock.goalTitle)}
-            disabled={!nextBlock}
-          >
-            <Text style={[styles.navButtonText, !nextBlock && styles.navButtonTextDisabled]}>
-              {nextBlock?.goalTitle || '다음'} →
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 구분선 */}
-        <View style={styles.divider} />
-
-        {/* 확장 섹션 1 - 메모 */}
-        <ExpandableSection title="📝 메모 및 세부사항">
-          <TextInput
-            style={styles.memoInput}
-            value={memoText}
-            onChangeText={(text) => { setMemoText(text); setMemoSaved(false); }}
-            multiline
-            placeholder="이 목표에 대한 메모를 작성하세요..."
-            placeholderTextColor={Colors.light.textDisabled}
-            textAlignVertical="top"
+      <Animated.View style={[{ flex: 1 }, entranceStyle]}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 컨텍스트 카드 - 전체 구조에서 현재 블록 위치 */}
+          <ContextCard
+            blockPosition={block.position}
+            blockTitle={block.goalTitle}
+            progress={progress}
+            completedCount={completedCount}
           />
-          <TouchableOpacity
-            style={[styles.memoSaveButton, memoSaved && styles.memoSavedButton]}
-            onPress={handleSaveMemo}
-          >
-            <Text style={styles.memoSaveButtonText}>
-              {memoSaved ? '✓ 저장됨' : '저장'}
-            </Text>
-          </TouchableOpacity>
-        </ExpandableSection>
 
-        {/* 확장 섹션 2 - 알림 설정 */}
-        <ExpandableSection title="🔔 알림 설정">
-          <View style={styles.alarmRow}>
-            <Text style={styles.alarmLabel}>알림 활성화</Text>
-            <Switch
-              value={alarmEnabled}
-              onValueChange={setAlarmEnabled}
-              trackColor={{ false: Colors.light.border, true: Colors.light.primary }}
-              thumbColor={Colors.light.cardBackground}
-            />
-          </View>
-          {alarmEnabled && (
-            <View style={styles.alarmTimeRow}>
-              <Text style={styles.alarmTimeLabel}>알림 시간</Text>
-              <View style={styles.alarmTimeInputs}>
-                <TextInput
-                  style={styles.alarmTimeInput}
-                  value={alarmHour}
-                  onChangeText={(v) => setAlarmHour(v.replace(/[^0-9]/g, '').slice(0, 2))}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  placeholder="07"
-                  placeholderTextColor={Colors.light.textDisabled}
-                />
-                <Text style={styles.alarmTimeSeparator}>:</Text>
-                <TextInput
-                  style={styles.alarmTimeInput}
-                  value={alarmMinute}
-                  onChangeText={(v) => setAlarmMinute(v.replace(/[^0-9]/g, '').slice(0, 2))}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  placeholder="00"
-                  placeholderTextColor={Colors.light.textDisabled}
-                />
-              </View>
+          {/* 진행률 카드 */}
+          <View style={styles.progressCard}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressLabel}>실행 과제</Text>
+              <Text style={styles.progressCount}>{completedCount} / 8 완료</Text>
             </View>
-          )}
-          {alarmEnabled && (
-            <Text style={styles.alarmHint}>
-              매일 {alarmHour.padStart(2, '0')}:{alarmMinute.padStart(2, '0')} 리마인더
-            </Text>
-          )}
-        </ExpandableSection>
+            <ProgressBar progress={progress} />
+            <Text style={styles.progressPercent}>{Math.round(progress * 100)}%</Text>
+          </View>
 
-        {/* 확장 섹션 3 - 관련 링크 */}
-        <ExpandableSection title="🔗 관련 링크 & 자료">
-          <View style={styles.linkInputRow}>
-            <TextInput
-              style={styles.linkInput}
-              value={linkInput}
-              onChangeText={setLinkInput}
-              placeholder="URL을 입력하세요"
-              placeholderTextColor={Colors.light.textDisabled}
-              autoCapitalize="none"
-              keyboardType="url"
-              returnKeyType="done"
-              onSubmitEditing={handleAddLink}
-            />
-            <TouchableOpacity style={styles.linkAddButton} onPress={handleAddLink}>
-              <Text style={styles.linkAddButtonText}>추가</Text>
+          {/* 3x3 셀 그리드 */}
+          <View style={styles.grid}>
+            {rows.map((row, rowIdx) => (
+              <View key={rowIdx} style={styles.row}>
+                {row.map((cell) =>
+                  cell.isCenter ? (
+                    <View key={cell.id} style={[styles.cell, styles.centerCell]}>
+                      <Text style={styles.centerIcon}>🎯</Text>
+                      <Text style={styles.centerCellTitle} numberOfLines={4}>
+                        {cell.title || '세부 목표'}
+                      </Text>
+                    </View>
+                  ) : (
+                    <TaskCell
+                      key={cell.id}
+                      cell={cell}
+                      onPress={() => handleCellPress(cell)}
+                      onToggle={() => toggleCell(blockId, cell.id)}
+                    />
+                  )
+                )}
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.hintText}>셀을 탭하여 제목 수정  ·  체크박스로 완료 처리</Text>
+
+          {/* 블록 간 네비게이션 */}
+          <View style={styles.blockNav}>
+            <TouchableOpacity
+              style={[styles.navButton, !prevBlock && styles.navButtonDisabled]}
+              onPress={() => prevBlock && handleNavigate(prevBlock.id, prevBlock.goalTitle)}
+              disabled={!prevBlock}
+            >
+              <Text style={[styles.navButtonText, !prevBlock && styles.navButtonTextDisabled]}>
+                ← {prevBlock?.goalTitle || '이전'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navButton, !nextBlock && styles.navButtonDisabled]}
+              onPress={() => nextBlock && handleNavigate(nextBlock.id, nextBlock.goalTitle)}
+              disabled={!nextBlock}
+            >
+              <Text style={[styles.navButtonText, !nextBlock && styles.navButtonTextDisabled]}>
+                {nextBlock?.goalTitle || '다음'} →
+              </Text>
             </TouchableOpacity>
           </View>
-          {links.length === 0 ? (
-            <Text style={styles.linkEmpty}>등록된 링크가 없습니다</Text>
-          ) : (
-            links.map((link, index) => (
-              <View key={index} style={styles.linkItem}>
-                <Text style={styles.linkText} numberOfLines={1}>{link}</Text>
-                <TouchableOpacity onPress={() => handleRemoveLink(index)}>
-                  <Text style={styles.linkRemove}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </ExpandableSection>
 
-        {/* 하단 여백 (FAB 공간 확보) */}
-        <View style={styles.fabSpacing} />
-      </ScrollView>
+          {/* 구분선 */}
+          <View style={styles.divider} />
+
+          {/* 확장 섹션 1 - 메모 */}
+          <ExpandableSection title="📝 메모 및 세부사항">
+            <TextInput
+              style={styles.memoInput}
+              value={memoText}
+              onChangeText={(text) => { setMemoText(text); setMemoSaved(false); }}
+              multiline
+              placeholder="이 목표에 대한 메모를 작성하세요..."
+              placeholderTextColor={Colors.light.textDisabled}
+              textAlignVertical="top"
+            />
+            <TouchableOpacity
+              style={[styles.memoSaveButton, memoSaved && styles.memoSavedButton]}
+              onPress={handleSaveMemo}
+            >
+              <Text style={styles.memoSaveButtonText}>
+                {memoSaved ? '✓ 저장됨' : '저장'}
+              </Text>
+            </TouchableOpacity>
+          </ExpandableSection>
+
+          {/* 확장 섹션 2 - 알림 설정 */}
+          <ExpandableSection title="🔔 알림 설정">
+            <View style={styles.alarmRow}>
+              <Text style={styles.alarmLabel}>알림 활성화</Text>
+              <Switch
+                value={alarmEnabled}
+                onValueChange={setAlarmEnabled}
+                trackColor={{ false: Colors.light.border, true: Colors.light.primary }}
+                thumbColor={Colors.light.cardBackground}
+              />
+            </View>
+            {alarmEnabled && (
+              <View style={styles.alarmTimeRow}>
+                <Text style={styles.alarmTimeLabel}>알림 시간</Text>
+                <View style={styles.alarmTimeInputs}>
+                  <TextInput
+                    style={styles.alarmTimeInput}
+                    value={alarmHour}
+                    onChangeText={(v) => setAlarmHour(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    placeholder="07"
+                    placeholderTextColor={Colors.light.textDisabled}
+                  />
+                  <Text style={styles.alarmTimeSeparator}>:</Text>
+                  <TextInput
+                    style={styles.alarmTimeInput}
+                    value={alarmMinute}
+                    onChangeText={(v) => setAlarmMinute(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    placeholder="00"
+                    placeholderTextColor={Colors.light.textDisabled}
+                  />
+                </View>
+              </View>
+            )}
+            {alarmEnabled && (
+              <Text style={styles.alarmHint}>
+                매일 {alarmHour.padStart(2, '0')}:{alarmMinute.padStart(2, '0')} 리마인더
+              </Text>
+            )}
+          </ExpandableSection>
+
+          {/* 확장 섹션 3 - 관련 링크 */}
+          <ExpandableSection title="🔗 관련 링크 & 자료">
+            <View style={styles.linkInputRow}>
+              <TextInput
+                style={styles.linkInput}
+                value={linkInput}
+                onChangeText={setLinkInput}
+                placeholder="URL을 입력하세요"
+                placeholderTextColor={Colors.light.textDisabled}
+                autoCapitalize="none"
+                keyboardType="url"
+                returnKeyType="done"
+                onSubmitEditing={handleAddLink}
+              />
+              <TouchableOpacity style={styles.linkAddButton} onPress={handleAddLink}>
+                <Text style={styles.linkAddButtonText}>추가</Text>
+              </TouchableOpacity>
+            </View>
+            {links.length === 0 ? (
+              <Text style={styles.linkEmpty}>등록된 링크가 없습니다</Text>
+            ) : (
+              links.map((link, index) => (
+                <View key={index} style={styles.linkItem}>
+                  <Text style={styles.linkText} numberOfLines={1}>{link}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveLink(index)}>
+                    <Text style={styles.linkRemove}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </ExpandableSection>
+
+          {/* 하단 여백 (FAB 공간 확보) */}
+          <View style={styles.fabSpacing} />
+        </ScrollView>
+      </Animated.View>
 
       {/* FAB - 새 할 일 추가 */}
       <TouchableOpacity style={styles.fab} onPress={handleFabPress} activeOpacity={0.85}>
@@ -633,10 +746,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  completedCell: {
-    backgroundColor: '#E8F5E9',
-    borderColor: Colors.light.progressHigh,
-  },
   centerIcon: {
     fontSize: FontSize.lg,
     marginBottom: 4,
@@ -646,22 +755,6 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     color: Colors.light.primary,
     textAlign: 'center',
-  },
-  checkbox: {
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  checkboxIcon: {
-    fontSize: 16,
-  },
-  cellTitle: {
-    fontSize: FontSize.xs,
-    color: Colors.light.text,
-    lineHeight: 16,
-  },
-  completedText: {
-    color: Colors.light.textSecondary,
-    textDecorationLine: 'line-through',
   },
 
   // 힌트

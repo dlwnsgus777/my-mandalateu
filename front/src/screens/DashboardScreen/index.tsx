@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,12 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -26,6 +32,19 @@ type DashboardNavigationProp = StackNavigationProp<RootStackParamList, 'Dashboar
 export const DashboardScreen = () => {
   const navigation = useNavigation<DashboardNavigationProp>();
   const currentProject = useMandalartStore((state) => state.currentProject);
+
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.95);
+
+  useEffect(() => {
+    opacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+    scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
+  }, []);
+
+  const entranceStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   if (!currentProject) {
     return (
@@ -55,6 +74,7 @@ export const DashboardScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Animated.View style={[{ flex: 1 }, entranceStyle]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -133,6 +153,7 @@ export const DashboardScreen = () => {
           })}
         </View>
       </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };
