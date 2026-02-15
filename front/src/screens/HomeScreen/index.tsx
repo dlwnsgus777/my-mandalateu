@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Vibration,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -20,6 +19,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import { ColorPicker } from '../../components/ColorPicker';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -44,6 +44,7 @@ export const HomeScreen = () => {
   const updateProjectTitle = useMandalartStore((state) => state.updateProjectTitle);
   const updateSubGoal = useMandalartStore((state) => state.updateSubGoal);
   const updateCoreGoal = useMandalartStore((state) => state.updateCoreGoal);
+  const updateBlockColor = useMandalartStore((state) => state.updateBlockColor);
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
@@ -56,6 +57,7 @@ export const HomeScreen = () => {
   const [longPressMenuVisible, setLongPressMenuVisible] = useState(false);
   const [longPressTitleEditing, setLongPressTitleEditing] = useState(false);
   const [longPressTitleInput, setLongPressTitleInput] = useState('');
+  const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
@@ -243,7 +245,7 @@ export const HomeScreen = () => {
               style={styles.sheetItem}
               onPress={() => {
                 setLongPressMenuVisible(false);
-                Alert.alert('색상 변경', 'Phase 5에서 구현 예정입니다.');
+                setColorPickerVisible(true);
               }}
             >
               <Text style={styles.sheetItemText}>🎨  색상 변경</Text>
@@ -255,6 +257,35 @@ export const HomeScreen = () => {
             >
               <Text style={styles.sheetCancelText}>취소</Text>
             </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 색상 선택 모달 */}
+      <Modal
+        visible={colorPickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setColorPickerVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.sheetOverlay}
+          activeOpacity={1}
+          onPress={() => setColorPickerVisible(false)}
+        >
+          <View style={styles.sheetContainer}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>🎨 색상 선택</Text>
+            <ColorPicker
+              selectedColor={longPressBlock?.color}
+              onSelectColor={(color) => {
+                if (longPressBlockId) {
+                  updateBlockColor(longPressBlockId, color);
+                }
+                setColorPickerVisible(false);
+                setLongPressBlockId(null);
+              }}
+            />
           </View>
         </TouchableOpacity>
       </Modal>

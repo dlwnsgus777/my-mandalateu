@@ -42,22 +42,37 @@ export const BlockCard: React.FC<BlockCardProps> = ({
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
   };
 
+  const accentColor = !isCenterBlock ? block.color : undefined;
+
   return (
     <Animated.View style={animatedStyle}>
       <TouchableOpacity
-        style={[styles.card, isCenterBlock && styles.centerCard]}
+        style={[
+          styles.card,
+          isCenterBlock && styles.centerCard,
+          accentColor && { borderColor: accentColor, borderWidth: 2 },
+        ]}
         onPress={onPress}
         onLongPress={onLongPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}
       >
+        {/* 색상 액센트 스트립 */}
+        {accentColor && (
+          <View style={[styles.colorStrip, { backgroundColor: accentColor }]} />
+        )}
+
         {isCenterBlock && (
           <Text style={styles.centerIcon}>🎯</Text>
         )}
 
         <Text
-          style={[styles.title, isCenterBlock && styles.centerTitle]}
+          style={[
+            styles.title,
+            isCenterBlock && styles.centerTitle,
+            accentColor && { color: accentColor },
+          ]}
           numberOfLines={2}
         >
           {block.goalTitle}
@@ -97,6 +112,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.centerBlockBackground,
     borderColor: Colors.light.centerBlockBorder,
     borderWidth: 2,
+  },
+  colorStrip: {
+    height: 4,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.xs,
   },
   centerIcon: {
     fontSize: FontSize.lg,

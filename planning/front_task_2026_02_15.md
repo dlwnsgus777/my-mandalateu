@@ -298,12 +298,12 @@ src/
 
 ### Phase 5 - 블록 색상 지정
 
-- [ ] `mandalartStore.ts`에 `updateBlockColor` 액션 추가
-- [ ] `src/components/ColorPicker/index.tsx` 신규 생성
-  - [ ] 8색 팔레트 원형 버튼 구현
-  - [ ] 선택된 색상 테두리 강조
-- [ ] `BlockCard`에 `block.color` 기반 액센트 컬러 반영
-- [ ] 롱프레스 메뉴(Phase 4)에 `ColorPicker` 연결
+- [x] `mandalartStore.ts`에 `updateBlockColor` 액션 추가
+- [x] `src/components/ColorPicker/index.tsx` 신규 생성
+  - [x] 8색 팔레트 원형 버튼 구현
+  - [x] 선택된 색상 테두리 강조
+- [x] `BlockCard`에 `block.color` 기반 액센트 컬러 반영
+- [x] 롱프레스 메뉴(Phase 4)에 `ColorPicker` 연결
 
 ### Phase 6 - DashboardScreen 고도화
 

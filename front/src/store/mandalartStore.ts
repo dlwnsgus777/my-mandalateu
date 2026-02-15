@@ -222,6 +222,8 @@ interface MandalartState {
   updateSubGoal: (cellPosition: number, title: string) => void;
   // 블록 메모
   updateBlockNotes: (blockId: string, notes: string) => void;
+  // 블록 색상
+  updateBlockColor: (blockId: string, color: string | undefined) => void;
   // 프로젝트
   updateProjectTitle: (title: string) => void;
   createProject: (title: string, coreGoal?: string) => void;
@@ -320,6 +322,18 @@ export const useMandalartStore = create<MandalartState>()((set) => ({
           }
           return block;
         }),
+      }))
+    ),
+
+  // 블록 색상 변경
+  updateBlockColor: (blockId, color) =>
+    set((state) =>
+      applyToProject(state, (p) => ({
+        ...p,
+        updatedAt: new Date().toISOString(),
+        blocks: p.blocks.map((block) =>
+          block.id === blockId ? { ...block, color } : block
+        ),
       }))
     ),
 
