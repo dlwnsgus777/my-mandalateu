@@ -9,7 +9,8 @@ export interface MandalartCell {
   title: string;
   description?: string;
   completed: boolean;
-  deadline?: string;
+  completedAt?: string; // ISO 8601 (완료 시각)
+  deadline?: string;    // 'YYYY-MM-DD'
   priority?: 'high' | 'medium' | 'low';
   tags?: string[];
 }

@@ -20,8 +20,8 @@ const MOCK_PROJECT: MandalartProject = {
       goalTitle: '운동 루틴',
       cells: [
         { id: 'b0c0', position: 0, isCenter: false, title: '주 3회 헬스', completed: true },
-        { id: 'b0c1', position: 1, isCenter: false, title: '매일 스트레칭', completed: true },
-        { id: 'b0c2', position: 2, isCenter: false, title: '런닝 30분', completed: false },
+        { id: 'b0c1', position: 1, isCenter: false, title: '매일 스트레칭', completed: true,  completedAt: '2026-02-15T11:00:00Z' },
+        { id: 'b0c2', position: 2, isCenter: false, title: '런닝 30분',     completed: false, deadline: '2026-02-16' },
         { id: 'b0c3', position: 3, isCenter: false, title: '수영 배우기', completed: false },
         { id: 'b0c4', position: 4, isCenter: true,  title: '운동 루틴',   completed: false },
         { id: 'b0c5', position: 5, isCenter: false, title: '자전거 타기', completed: true },
@@ -36,13 +36,13 @@ const MOCK_PROJECT: MandalartProject = {
       position: 1,
       goalTitle: '식단 관리',
       cells: [
-        { id: 'b1c0', position: 0, isCenter: false, title: '채소 매일 먹기',  completed: true },
+        { id: 'b1c0', position: 0, isCenter: false, title: '채소 매일 먹기',  completed: true, completedAt: '2026-02-16T08:00:00Z' },
         { id: 'b1c1', position: 1, isCenter: false, title: '물 2L 마시기',    completed: true },
-        { id: 'b1c2', position: 2, isCenter: false, title: '단 음식 줄이기',  completed: true },
+        { id: 'b1c2', position: 2, isCenter: false, title: '단 음식 줄이기',  completed: true, completedAt: '2026-02-13T09:00:00Z' },
         { id: 'b1c3', position: 3, isCenter: false, title: '아침 식사 하기',  completed: true },
         { id: 'b1c4', position: 4, isCenter: true,  title: '식단 관리',       completed: false },
         { id: 'b1c5', position: 5, isCenter: false, title: '칼로리 기록',     completed: true },
-        { id: 'b1c6', position: 6, isCenter: false, title: '간식 줄이기',     completed: false },
+        { id: 'b1c6', position: 6, isCenter: false, title: '간식 줄이기',     completed: false, deadline: '2026-02-17' },
         { id: 'b1c7', position: 7, isCenter: false, title: '외식 줄이기',     completed: false },
         { id: 'b1c8', position: 8, isCenter: false, title: '요리 배우기',     completed: false },
       ],
@@ -54,7 +54,7 @@ const MOCK_PROJECT: MandalartProject = {
       goalTitle: '수면 개선',
       cells: [
         { id: 'b2c0', position: 0, isCenter: false, title: '11시 취침',       completed: true },
-        { id: 'b2c1', position: 1, isCenter: false, title: '7시 기상',        completed: false },
+        { id: 'b2c1', position: 1, isCenter: false, title: '7시 기상',        completed: false, deadline: '2026-02-18' },
         { id: 'b2c2', position: 2, isCenter: false, title: '수면 일기 쓰기',  completed: true },
         { id: 'b2c3', position: 3, isCenter: false, title: '스마폰 금지',     completed: false },
         { id: 'b2c4', position: 4, isCenter: true,  title: '수면 개선',       completed: false },
@@ -70,10 +70,10 @@ const MOCK_PROJECT: MandalartProject = {
       position: 3,
       goalTitle: '스트레스 해소',
       cells: [
-        { id: 'b3c0', position: 0, isCenter: false, title: '산책 30분',    completed: true },
-        { id: 'b3c1', position: 1, isCenter: false, title: '음악 듣기',    completed: true },
-        { id: 'b3c2', position: 2, isCenter: false, title: '친구 만나기',  completed: true },
-        { id: 'b3c3', position: 3, isCenter: false, title: '취미 생활',    completed: true },
+        { id: 'b3c0', position: 0, isCenter: false, title: '산책 30분',    completed: true, completedAt: '2026-02-15T09:00:00Z' },
+        { id: 'b3c1', position: 1, isCenter: false, title: '음악 듣기',    completed: true, completedAt: '2026-02-15T10:00:00Z' },
+        { id: 'b3c2', position: 2, isCenter: false, title: '친구 만나기',  completed: true, completedAt: '2026-02-13T10:00:00Z' },
+        { id: 'b3c3', position: 3, isCenter: false, title: '취미 생활',    completed: true, completedAt: '2026-02-12T10:00:00Z' },
         { id: 'b3c4', position: 4, isCenter: true,  title: '스트레스 해소', completed: false },
         { id: 'b3c5', position: 5, isCenter: false, title: '일기 쓰기',    completed: true },
         { id: 'b3c6', position: 6, isCenter: false, title: '영화 보기',    completed: true },
@@ -95,7 +95,7 @@ const MOCK_PROJECT: MandalartProject = {
         { id: 'b4c5', position: 5, isCenter: false, title: '명상 실천',     completed: false },
         { id: 'b4c6', position: 6, isCenter: false, title: '체중 관리',     completed: false },
         { id: 'b4c7', position: 7, isCenter: false, title: '사회 활동',     completed: false },
-        { id: 'b4c8', position: 8, isCenter: false, title: '자기 계발',     completed: true },
+        { id: 'b4c8', position: 8, isCenter: false, title: '자기 계발',     completed: true, completedAt: '2026-02-09T09:00:00Z' },
       ],
     },
     // Block 5 (우중단): 명상 실천
@@ -104,8 +104,8 @@ const MOCK_PROJECT: MandalartProject = {
       position: 5,
       goalTitle: '명상 실천',
       cells: [
-        { id: 'b5c0', position: 0, isCenter: false, title: '아침 명상 5분',  completed: true },
-        { id: 'b5c1', position: 1, isCenter: false, title: '마음챙김 실천',  completed: false },
+        { id: 'b5c0', position: 0, isCenter: false, title: '아침 명상 5분',  completed: true,  completedAt: '2026-02-16T10:00:00Z' },
+        { id: 'b5c1', position: 1, isCenter: false, title: '마음챙김 실천',  completed: false, deadline: '2026-02-19' },
         { id: 'b5c2', position: 2, isCenter: false, title: '호흡 명상',      completed: false },
         { id: 'b5c3', position: 3, isCenter: false, title: '바디스캔 명상',  completed: false },
         { id: 'b5c4', position: 4, isCenter: true,  title: '명상 실천',      completed: false },
@@ -121,9 +121,9 @@ const MOCK_PROJECT: MandalartProject = {
       position: 6,
       goalTitle: '체중 관리',
       cells: [
-        { id: 'b6c0', position: 0, isCenter: false, title: 'BMI 측정',      completed: true },
-        { id: 'b6c1', position: 1, isCenter: false, title: '인바디 검사',   completed: true },
-        { id: 'b6c2', position: 2, isCenter: false, title: '목표 체중 설정', completed: true },
+        { id: 'b6c0', position: 0, isCenter: false, title: 'BMI 측정',       completed: true, completedAt: '2026-02-14T08:00:00Z' },
+        { id: 'b6c1', position: 1, isCenter: false, title: '인바디 검사',    completed: true, completedAt: '2026-02-14T09:00:00Z' },
+        { id: 'b6c2', position: 2, isCenter: false, title: '목표 체중 설정', completed: true, completedAt: '2026-02-13T10:00:00Z' },
         { id: 'b6c3', position: 3, isCenter: false, title: '주간 체중 측정', completed: true },
         { id: 'b6c4', position: 4, isCenter: true,  title: '체중 관리',     completed: false },
         { id: 'b6c5', position: 5, isCenter: false, title: '체지방 관리',   completed: false },
@@ -157,12 +157,12 @@ const MOCK_PROJECT: MandalartProject = {
       cells: [
         { id: 'b8c0', position: 0, isCenter: false, title: '독서 월 2권',   completed: true },
         { id: 'b8c1', position: 1, isCenter: false, title: '온라인 강의',   completed: true },
-        { id: 'b8c2', position: 2, isCenter: false, title: '자격증 공부',   completed: true },
-        { id: 'b8c3', position: 3, isCenter: false, title: '외국어 학습',   completed: true },
+        { id: 'b8c2', position: 2, isCenter: false, title: '자격증 공부',   completed: true, completedAt: '2026-02-12T09:00:00Z' },
+        { id: 'b8c3', position: 3, isCenter: false, title: '외국어 학습',   completed: true, completedAt: '2026-02-12T10:00:00Z' },
         { id: 'b8c4', position: 4, isCenter: true,  title: '자기 계발',     completed: false },
-        { id: 'b8c5', position: 5, isCenter: false, title: '코딩 배우기',   completed: true },
+        { id: 'b8c5', position: 5, isCenter: false, title: '코딩 배우기',   completed: true, completedAt: '2026-02-16T09:00:00Z' },
         { id: 'b8c6', position: 6, isCenter: false, title: '글쓰기 연습',   completed: true },
-        { id: 'b8c7', position: 7, isCenter: false, title: '세미나 참여',   completed: true },
+        { id: 'b8c7', position: 7, isCenter: false, title: '세미나 참여',   completed: true, completedAt: '2026-02-09T10:00:00Z' },
         { id: 'b8c8', position: 8, isCenter: false, title: '유튜브 강의',   completed: false },
       ],
     },
@@ -246,9 +246,15 @@ export const useMandalartStore = create<MandalartState>()((set) => ({
           block.id === blockId
             ? {
                 ...block,
-                cells: block.cells.map((cell) =>
-                  cell.id === cellId ? { ...cell, completed: !cell.completed } : cell
-                ),
+                cells: block.cells.map((cell) => {
+                  if (cell.id !== cellId) return cell;
+                  const nowCompleted = !cell.completed;
+                  return {
+                    ...cell,
+                    completed: nowCompleted,
+                    completedAt: nowCompleted ? new Date().toISOString() : undefined,
+                  };
+                }),
               }
             : block
         ),
