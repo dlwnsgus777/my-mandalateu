@@ -286,15 +286,15 @@ src/
 
 ### Phase 4 - 제스처
 
-- [ ] `BlockCard` 롱프레스 Bottom Sheet / ActionSheet 구현
-  - [ ] 메뉴 항목: 색상 변경, 제목 편집, 메모 작성
-  - [ ] Haptic Feedback 연동
-- [ ] `BlockDetailScreen` 셀 스와이프 액션 구현
-  - [ ] `Swipeable`로 셀 감싸기
-  - [ ] 좌측 스와이프 → 빨간 삭제 버튼
-  - [ ] 우측 스와이프 → 초록 완료 토글 버튼
-- [ ] `HomeScreen` Pull to Refresh 추가
-- [ ] `DashboardScreen` Pull to Refresh 추가
+- [x] `BlockCard` 롱프레스 Bottom Sheet / ActionSheet 구현
+  - [x] 메뉴 항목: 색상 변경, 제목 편집, 메모 작성
+  - [x] Haptic Feedback 연동 (Vibration.vibrate)
+- [x] `BlockDetailScreen` 셀 스와이프 액션 구현
+  - [x] `Swipeable`로 셀 감싸기
+  - [x] 좌측 스와이프 → 빨간 삭제 버튼
+  - [x] 우측 스와이프 → 초록 완료 토글 버튼
+- [x] `HomeScreen` Pull to Refresh 추가
+- [x] `DashboardScreen` Pull to Refresh 추가
 
 ### Phase 5 - 블록 색상 지정
 

@@ -10,6 +10,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Vibration,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -39,9 +42,20 @@ export const HomeScreen = () => {
   const navigation = useNavigation<HomeNavigationProp>();
   const currentProject = useMandalartStore((state) => state.currentProject);
   const updateProjectTitle = useMandalartStore((state) => state.updateProjectTitle);
+  const updateSubGoal = useMandalartStore((state) => state.updateSubGoal);
+  const updateCoreGoal = useMandalartStore((state) => state.updateCoreGoal);
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
+
+  // Pull to Refresh
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 롱프레스 메뉴
+  const [longPressBlockId, setLongPressBlockId] = useState<string | null>(null);
+  const [longPressMenuVisible, setLongPressMenuVisible] = useState(false);
+  const [longPressTitleEditing, setLongPressTitleEditing] = useState(false);
+  const [longPressTitleInput, setLongPressTitleInput] = useState('');
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
@@ -77,8 +91,40 @@ export const HomeScreen = () => {
   const completedTasks = allTasks.filter((c) => c.completed).length;
   const overallProgress = allTasks.length > 0 ? completedTasks / allTasks.length : 0;
 
+  const longPressBlock = currentProject?.blocks.find((b) => b.id === longPressBlockId) ?? null;
+
   const handleBlockPress = (blockId: string, blockTitle: string) => {
     navigation.navigate('BlockDetail', { blockId, blockTitle });
+  };
+
+  const handleBlockLongPress = (blockId: string) => {
+    Vibration.vibrate(50);
+    setLongPressBlockId(blockId);
+    setLongPressMenuVisible(true);
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  };
+
+  const openLongPressTitleEdit = () => {
+    setLongPressMenuVisible(false);
+    setLongPressTitleInput(longPressBlock?.goalTitle ?? '');
+    setLongPressTitleEditing(true);
+  };
+
+  const saveLongPressTitle = () => {
+    const trimmed = longPressTitleInput.trim();
+    if (trimmed && longPressBlock) {
+      if (longPressBlock.position === 4) {
+        updateCoreGoal(trimmed);
+      } else {
+        updateSubGoal(longPressBlock.position, trimmed);
+      }
+    }
+    setLongPressTitleEditing(false);
+    setLongPressBlockId(null);
   };
 
   const openTitleEdit = () => {
@@ -98,6 +144,9 @@ export const HomeScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* 프로젝트 카드 */}
         <TouchableOpacity
@@ -125,6 +174,7 @@ export const HomeScreen = () => {
           <BlockGrid
             blocks={currentProject.blocks}
             onBlockPress={handleBlockPress}
+            onBlockLongPress={handleBlockLongPress}
           />
         </View>
 
@@ -151,6 +201,104 @@ export const HomeScreen = () => {
         </View>
       </ScrollView>
       </Animated.View>
+
+      {/* 롱프레스 ActionSheet */}
+      <Modal
+        visible={longPressMenuVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLongPressMenuVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.sheetOverlay}
+          activeOpacity={1}
+          onPress={() => setLongPressMenuVisible(false)}
+        >
+          <View style={styles.sheetContainer}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle} numberOfLines={1}>
+              {longPressBlock?.goalTitle || '블록 옵션'}
+            </Text>
+
+            <TouchableOpacity style={styles.sheetItem} onPress={openLongPressTitleEdit}>
+              <Text style={styles.sheetItemText}>✏️  제목 편집</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sheetItem}
+              onPress={() => {
+                setLongPressMenuVisible(false);
+                if (longPressBlock) {
+                  navigation.navigate('BlockDetail', {
+                    blockId: longPressBlock.id,
+                    blockTitle: longPressBlock.goalTitle,
+                  });
+                }
+              }}
+            >
+              <Text style={styles.sheetItemText}>📝  메모 작성</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sheetItem}
+              onPress={() => {
+                setLongPressMenuVisible(false);
+                Alert.alert('색상 변경', 'Phase 5에서 구현 예정입니다.');
+              }}
+            >
+              <Text style={styles.sheetItemText}>🎨  색상 변경</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.sheetItem, styles.sheetCancelItem]}
+              onPress={() => setLongPressMenuVisible(false)}
+            >
+              <Text style={styles.sheetCancelText}>취소</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 롱프레스 제목 편집 모달 */}
+      <Modal
+        visible={longPressTitleEditing}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLongPressTitleEditing(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>블록 제목 편집</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={longPressTitleInput}
+              onChangeText={setLongPressTitleInput}
+              autoFocus
+              placeholder="제목을 입력하세요"
+              maxLength={40}
+              returnKeyType="done"
+              onSubmitEditing={saveLongPressTitle}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setLongPressTitleEditing(false)}
+              >
+                <Text style={styles.cancelButtonText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={saveLongPressTitle}
+              >
+                <Text style={styles.saveButtonText}>저장</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* 프로젝트 제목 편집 모달 */}
       <Modal
@@ -363,5 +511,55 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.semibold,
     color: Colors.light.buttonText,
+  },
+
+  // 롱프레스 바텀시트
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: Colors.light.overlay,
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: Colors.light.cardBackground,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    ...Shadow.lg,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.light.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: Spacing.md,
+  },
+  sheetTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.light.text,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+  },
+  sheetItem: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.divider,
+  },
+  sheetItemText: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+  },
+  sheetCancelItem: {
+    borderBottomWidth: 0,
+    marginTop: Spacing.xs,
+  },
+  sheetCancelText: {
+    fontSize: FontSize.md,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
   },
 });

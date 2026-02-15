@@ -21,6 +21,7 @@ import Animated, {
   interpolateColor,
   Easing,
 } from 'react-native-reanimated';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -144,6 +145,90 @@ const taskCellStyles = StyleSheet.create({
   placeholderText: {
     color: Colors.light.textDisabled,
     fontWeight: FontWeight.regular,
+  },
+});
+
+// ── SwipeableCell: 스와이프 액션 래퍼 ──────────────────────────────────────
+
+interface SwipeableCellProps {
+  cell: MandalartCell;
+  blockId: string;
+  onPress: () => void;
+  onToggle: () => void;
+  onDelete: () => void;
+}
+
+const SwipeableCell: React.FC<SwipeableCellProps> = ({
+  cell,
+  onPress,
+  onToggle,
+  onDelete,
+}) => {
+  const swipeRef = React.useRef<Swipeable>(null);
+
+  const renderRightActions = () => (
+    <TouchableOpacity
+      style={swipeStyles.deleteAction}
+      onPress={() => {
+        onDelete();
+        swipeRef.current?.close();
+      }}
+    >
+      <Text style={swipeStyles.actionText}>🗑️{'\n'}삭제</Text>
+    </TouchableOpacity>
+  );
+
+  const renderLeftActions = () => (
+    <TouchableOpacity
+      style={swipeStyles.completeAction}
+      onPress={() => {
+        onToggle();
+        swipeRef.current?.close();
+      }}
+    >
+      <Text style={swipeStyles.actionText}>
+        {cell.completed ? '↩️\n미완료' : '✅\n완료'}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <Swipeable
+      ref={swipeRef}
+      renderRightActions={renderRightActions}
+      renderLeftActions={renderLeftActions}
+      overshootRight={false}
+      overshootLeft={false}
+      containerStyle={{ flex: 1 }}
+    >
+      <TaskCell cell={cell} onPress={onPress} onToggle={onToggle} />
+    </Swipeable>
+  );
+};
+
+const swipeStyles = StyleSheet.create({
+  deleteAction: {
+    backgroundColor: '#F44336',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 72,
+    borderRadius: BorderRadius.md,
+    marginLeft: Spacing.xs,
+  },
+  completeAction: {
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 72,
+    borderRadius: BorderRadius.md,
+    marginRight: Spacing.xs,
+  },
+  actionText: {
+    color: '#FFFFFF',
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
 
@@ -435,11 +520,13 @@ export const BlockDetailScreen = () => {
                       </Text>
                     </View>
                   ) : (
-                    <TaskCell
+                    <SwipeableCell
                       key={cell.id}
                       cell={cell}
+                      blockId={blockId}
                       onPress={() => handleCellPress(cell)}
                       onToggle={() => toggleCell(blockId, cell.id)}
+                      onDelete={() => updateCellTitle(blockId, cell.id, '')}
                     />
                   )
                 )}

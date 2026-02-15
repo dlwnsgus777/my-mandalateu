@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   StyleSheet,
+  RefreshControl,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -32,6 +33,13 @@ type DashboardNavigationProp = StackNavigationProp<RootStackParamList, 'Dashboar
 export const DashboardScreen = () => {
   const navigation = useNavigation<DashboardNavigationProp>();
   const currentProject = useMandalartStore((state) => state.currentProject);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  };
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.95);
@@ -78,6 +86,9 @@ export const DashboardScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* 전체 요약 카드 */}
         <View style={styles.summaryCard}>
