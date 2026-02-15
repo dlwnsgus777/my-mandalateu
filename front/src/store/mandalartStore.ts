@@ -220,6 +220,8 @@ interface MandalartState {
   // 목표 편집 (데이터 동기화 포함)
   updateCoreGoal: (title: string) => void;
   updateSubGoal: (cellPosition: number, title: string) => void;
+  // 블록 메모
+  updateBlockNotes: (blockId: string, notes: string) => void;
   // 프로젝트
   updateProjectTitle: (title: string) => void;
   createProject: (title: string, coreGoal?: string) => void;
@@ -318,6 +320,18 @@ export const useMandalartStore = create<MandalartState>()((set) => ({
           }
           return block;
         }),
+      }))
+    ),
+
+  // 블록 메모 편집
+  updateBlockNotes: (blockId, notes) =>
+    set((state) =>
+      applyToProject(state, (p) => ({
+        ...p,
+        updatedAt: new Date().toISOString(),
+        blocks: p.blocks.map((block) =>
+          block.id === blockId ? { ...block, notes } : block
+        ),
       }))
     ),
 

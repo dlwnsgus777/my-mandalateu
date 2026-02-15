@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Switch,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -17,6 +18,8 @@ import { RootStackParamList } from '../../types/navigation';
 import { useMandalartStore } from '../../store/mandalartStore';
 import { MandalartCell } from '../../types/mandalart';
 import { ProgressBar } from '../../components/ProgressBar';
+import { ContextCard } from '../../components/ContextCard';
+import { ExpandableSection } from '../../components/ExpandableSection';
 import { Colors } from '../../constants/colors';
 import {
   BorderRadius,
@@ -39,9 +42,23 @@ export const BlockDetailScreen = () => {
   const updateCellTitle = useMandalartStore((state) => state.updateCellTitle);
   const updateCoreGoal = useMandalartStore((state) => state.updateCoreGoal);
   const updateSubGoal = useMandalartStore((state) => state.updateSubGoal);
+  const updateBlockNotes = useMandalartStore((state) => state.updateBlockNotes);
 
   const [editingCell, setEditingCell] = useState<MandalartCell | null>(null);
   const [editTitle, setEditTitle] = useState('');
+
+  // 확장 섹션 - 메모
+  const [memoText, setMemoText] = useState('');
+  const [memoSaved, setMemoSaved] = useState(false);
+
+  // 확장 섹션 - 알림 (로컬 UI 상태)
+  const [alarmEnabled, setAlarmEnabled] = useState(false);
+  const [alarmHour, setAlarmHour] = useState('07');
+  const [alarmMinute, setAlarmMinute] = useState('00');
+
+  // 확장 섹션 - 링크 (로컬 UI 상태)
+  const [links, setLinks] = useState<string[]>([]);
+  const [linkInput, setLinkInput] = useState('');
 
   const block = currentProject?.blocks.find((b) => b.id === blockId);
   const isCenterBlock = block?.position === 4;
@@ -49,6 +66,13 @@ export const BlockDetailScreen = () => {
   const nonCenterCells = block?.cells.filter((c) => !c.isCenter) ?? [];
   const completedCount = nonCenterCells.filter((c) => c.completed).length;
   const progress = nonCenterCells.length > 0 ? completedCount / nonCenterCells.length : 0;
+
+  // 메모 초기값 동기화
+  React.useEffect(() => {
+    if (block?.notes !== undefined && !memoSaved) {
+      setMemoText(block.notes);
+    }
+  }, [block?.id]);
 
   useLayoutEffect(() => {
     if (!block) return;
@@ -85,11 +109,9 @@ export const BlockDetailScreen = () => {
   // 셀 탭 핸들러
   const handleCellPress = (cell: MandalartCell) => {
     if (isCenterBlock) {
-      // 중앙 블록: 모든 셀 편집 가능 (핵심 목표 또는 세부 목표)
       setEditingCell(cell);
       setEditTitle(cell.title);
     } else {
-      // 일반 블록: 중앙 셀은 편집 불가, 나머지만 편집
       if (cell.isCenter) return;
       setEditingCell(cell);
       setEditTitle(cell.title);
@@ -102,21 +124,52 @@ export const BlockDetailScreen = () => {
 
     if (isCenterBlock) {
       if (editingCell.isCenter) {
-        // 핵심 목표 편집
         if (trimmed) updateCoreGoal(trimmed);
       } else {
-        // 세부 목표 편집 → 대응 블록과 동기화
         if (trimmed !== undefined) updateSubGoal(editingCell.position, trimmed);
       }
     } else {
-      // 일반 블록: 실행 과제 제목 편집
       if (trimmed) updateCellTitle(blockId, editingCell.id, trimmed);
     }
     setEditingCell(null);
   };
 
+  // FAB: 빈 셀(제목 없는 셀) 찾아서 편집 모달 오픈
+  const handleFabPress = () => {
+    const emptyCell = nonCenterCells.find((c) => !c.title);
+    if (emptyCell) {
+      setEditingCell(emptyCell);
+      setEditTitle('');
+    } else {
+      // 모든 셀이 채워진 경우 첫 번째 셀 편집
+      const firstCell = nonCenterCells[0];
+      if (firstCell) {
+        setEditingCell(firstCell);
+        setEditTitle(firstCell.title);
+      }
+    }
+  };
+
   const handleNavigate = (targetId: string, targetTitle: string) => {
     navigation.replace('BlockDetail', { blockId: targetId, blockTitle: targetTitle });
+  };
+
+  // 메모 저장
+  const handleSaveMemo = () => {
+    updateBlockNotes(blockId, memoText);
+    setMemoSaved(true);
+  };
+
+  // 링크 추가
+  const handleAddLink = () => {
+    const trimmed = linkInput.trim();
+    if (!trimmed) return;
+    setLinks((prev) => [...prev, trimmed]);
+    setLinkInput('');
+  };
+
+  const handleRemoveLink = (index: number) => {
+    setLinks((prev) => prev.filter((_, i) => i !== index));
   };
 
   // ── 중앙 블록 UI ──────────────────────────────────────────────────────────
@@ -219,6 +272,14 @@ export const BlockDetailScreen = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* 컨텍스트 카드 - 전체 구조에서 현재 블록 위치 */}
+        <ContextCard
+          blockPosition={block.position}
+          blockTitle={block.goalTitle}
+          progress={progress}
+          completedCount={completedCount}
+        />
+
         {/* 진행률 카드 */}
         <View style={styles.progressCard}>
           <View style={styles.progressHeader}>
@@ -297,7 +358,115 @@ export const BlockDetailScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* 구분선 */}
+        <View style={styles.divider} />
+
+        {/* 확장 섹션 1 - 메모 */}
+        <ExpandableSection title="📝 메모 및 세부사항">
+          <TextInput
+            style={styles.memoInput}
+            value={memoText}
+            onChangeText={(text) => { setMemoText(text); setMemoSaved(false); }}
+            multiline
+            placeholder="이 목표에 대한 메모를 작성하세요..."
+            placeholderTextColor={Colors.light.textDisabled}
+            textAlignVertical="top"
+          />
+          <TouchableOpacity
+            style={[styles.memoSaveButton, memoSaved && styles.memoSavedButton]}
+            onPress={handleSaveMemo}
+          >
+            <Text style={styles.memoSaveButtonText}>
+              {memoSaved ? '✓ 저장됨' : '저장'}
+            </Text>
+          </TouchableOpacity>
+        </ExpandableSection>
+
+        {/* 확장 섹션 2 - 알림 설정 */}
+        <ExpandableSection title="🔔 알림 설정">
+          <View style={styles.alarmRow}>
+            <Text style={styles.alarmLabel}>알림 활성화</Text>
+            <Switch
+              value={alarmEnabled}
+              onValueChange={setAlarmEnabled}
+              trackColor={{ false: Colors.light.border, true: Colors.light.primary }}
+              thumbColor={Colors.light.cardBackground}
+            />
+          </View>
+          {alarmEnabled && (
+            <View style={styles.alarmTimeRow}>
+              <Text style={styles.alarmTimeLabel}>알림 시간</Text>
+              <View style={styles.alarmTimeInputs}>
+                <TextInput
+                  style={styles.alarmTimeInput}
+                  value={alarmHour}
+                  onChangeText={(v) => setAlarmHour(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  placeholder="07"
+                  placeholderTextColor={Colors.light.textDisabled}
+                />
+                <Text style={styles.alarmTimeSeparator}>:</Text>
+                <TextInput
+                  style={styles.alarmTimeInput}
+                  value={alarmMinute}
+                  onChangeText={(v) => setAlarmMinute(v.replace(/[^0-9]/g, '').slice(0, 2))}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  placeholder="00"
+                  placeholderTextColor={Colors.light.textDisabled}
+                />
+              </View>
+            </View>
+          )}
+          {alarmEnabled && (
+            <Text style={styles.alarmHint}>
+              매일 {alarmHour.padStart(2, '0')}:{alarmMinute.padStart(2, '0')} 리마인더
+            </Text>
+          )}
+        </ExpandableSection>
+
+        {/* 확장 섹션 3 - 관련 링크 */}
+        <ExpandableSection title="🔗 관련 링크 & 자료">
+          <View style={styles.linkInputRow}>
+            <TextInput
+              style={styles.linkInput}
+              value={linkInput}
+              onChangeText={setLinkInput}
+              placeholder="URL을 입력하세요"
+              placeholderTextColor={Colors.light.textDisabled}
+              autoCapitalize="none"
+              keyboardType="url"
+              returnKeyType="done"
+              onSubmitEditing={handleAddLink}
+            />
+            <TouchableOpacity style={styles.linkAddButton} onPress={handleAddLink}>
+              <Text style={styles.linkAddButtonText}>추가</Text>
+            </TouchableOpacity>
+          </View>
+          {links.length === 0 ? (
+            <Text style={styles.linkEmpty}>등록된 링크가 없습니다</Text>
+          ) : (
+            links.map((link, index) => (
+              <View key={index} style={styles.linkItem}>
+                <Text style={styles.linkText} numberOfLines={1}>{link}</Text>
+                <TouchableOpacity onPress={() => handleRemoveLink(index)}>
+                  <Text style={styles.linkRemove}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </ExpandableSection>
+
+        {/* 하단 여백 (FAB 공간 확보) */}
+        <View style={styles.fabSpacing} />
       </ScrollView>
+
+      {/* FAB - 새 할 일 추가 */}
+      <TouchableOpacity style={styles.fab} onPress={handleFabPress} activeOpacity={0.85}>
+        <Text style={styles.fabIcon}>+</Text>
+      </TouchableOpacity>
 
       {/* 셀 편집 모달 */}
       <Modal
@@ -507,6 +676,7 @@ const styles = StyleSheet.create({
   blockNav: {
     flexDirection: 'row',
     gap: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   navButton: {
     flex: 1,
@@ -529,6 +699,163 @@ const styles = StyleSheet.create({
   },
   navButtonTextDisabled: {
     color: Colors.light.textDisabled,
+  },
+
+  // 구분선
+  divider: {
+    height: 1,
+    backgroundColor: Colors.light.divider,
+    marginBottom: Spacing.md,
+  },
+
+  // 메모 섹션
+  memoInput: {
+    minHeight: 80,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+    marginBottom: Spacing.sm,
+  },
+  memoSaveButton: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    backgroundColor: Colors.light.buttonPrimary,
+    borderRadius: BorderRadius.md,
+  },
+  memoSavedButton: {
+    backgroundColor: Colors.light.progressHigh,
+  },
+  memoSaveButtonText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: Colors.light.buttonText,
+  },
+
+  // 알림 섹션
+  alarmRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  alarmLabel: {
+    fontSize: FontSize.md,
+    color: Colors.light.text,
+  },
+  alarmTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  alarmTimeLabel: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+  },
+  alarmTimeInputs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  alarmTimeInput: {
+    width: 44,
+    height: 36,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: BorderRadius.md,
+    textAlign: 'center',
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+    color: Colors.light.text,
+  },
+  alarmTimeSeparator: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.light.text,
+  },
+  alarmHint: {
+    fontSize: FontSize.xs,
+    color: Colors.light.primary,
+    marginTop: Spacing.xs,
+  },
+
+  // 링크 섹션
+  linkInputRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  linkInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.sm,
+    fontSize: FontSize.sm,
+    color: Colors.light.text,
+  },
+  linkAddButton: {
+    height: 40,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.light.buttonPrimary,
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  linkAddButtonText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: Colors.light.buttonText,
+  },
+  linkEmpty: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textDisabled,
+    textAlign: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  linkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.xs + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.divider,
+  },
+  linkText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: Colors.light.primary,
+  },
+  linkRemove: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
+    paddingLeft: Spacing.sm,
+  },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    bottom: Spacing.xl,
+    right: Spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.light.buttonPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadow.lg,
+  },
+  fabIcon: {
+    fontSize: 28,
+    color: Colors.light.buttonText,
+    lineHeight: 32,
+  },
+  fabSpacing: {
+    height: 80,
   },
 
   // 편집 모달
