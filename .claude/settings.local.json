@@ -6,7 +6,9 @@
       "Bash(npm install:*)",
       "Bash(npx expo install:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
+      "Bash(gradle:*)"
     ]
   }
 }

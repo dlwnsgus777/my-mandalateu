@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mandalateu?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    show-sql: false
+
+  security:
+    # Spring Security 기본 유저 비활성화
+    user:
+      name: disable
+
+jwt:
+  secret: ${JWT_SECRET:mandalateu-dev-secret-key-must-be-at-least-32-characters}
+  access-token-expiry: 3600000       # 1시간 (ms)
+  refresh-token-expiry: 604800000    # 7일 (ms)
+
+server:
+  port: 8080
