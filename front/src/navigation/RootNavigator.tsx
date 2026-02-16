@@ -7,8 +7,10 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
+import { useMandalartStore } from '../store/mandalartStore';
 
 // Screens
+import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { BlockDetailScreen } from '../screens/BlockDetailScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
@@ -18,10 +20,12 @@ import { CreateProjectScreen } from '../screens/CreateProjectScreen';
 const Stack = createStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
+  const isFirstLaunch = useMandalartStore((state) => state.isFirstLaunch);
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName={isFirstLaunch ? 'Onboarding' : 'Home'}
         screenOptions={{
           headerShown: true,
           headerStyle: {
@@ -33,6 +37,11 @@ export const RootNavigator = () => {
           },
         }}
       >
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Home"
           component={HomeScreen}

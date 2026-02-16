@@ -19,7 +19,7 @@
 | Phase 5 - 블록 색상 지정 | ✅ 완료 | |
 | Phase 6 - Dashboard 고도화 | ✅ 완료 | |
 | Phase 7 - SettingsScreen | ✅ 완료 | |
-| Phase 8 - 온보딩 | ❌ 미구현 | 파일·라우팅 모두 없음 |
+| Phase 8 - 온보딩 | ✅ 완료 | |
 
 ---
 
@@ -87,17 +87,17 @@
 
 ### Phase 8 - 온보딩
 
-- [ ] `src/types/navigation.ts`에 `Onboarding` 라우트 타입 추가
-- [ ] `src/screens/OnboardingScreen/index.tsx` 신규 생성
-  - [ ] 4페이지 수평 슬라이드 (`FlatList` + `pagingEnabled`)
-  - [ ] 하단 페이지 인디케이터 (점)
-  - [ ] 슬라이드 1: 만다라트란? (핵심 목표 설명)
-  - [ ] 슬라이드 2: 세부 목표 8개 설명
-  - [ ] 슬라이드 3: 실행 과제 64개 설명
-  - [ ] 슬라이드 4: "시작하기" CTA 버튼
-- [ ] `mandalartStore.ts`에 `isFirstLaunch` 필드 + `setFirstLaunchDone` 액션 추가
-- [ ] `RootNavigator.tsx`에 `OnboardingScreen` 등록
-- [ ] `RootNavigator.tsx`에서 `isFirstLaunch` 기반 초기 라우트 분기
+- [x] `src/types/navigation.ts`에 `Onboarding` 라우트 타입 추가
+- [x] `src/screens/OnboardingScreen/index.tsx` 신규 생성
+  - [x] 4페이지 수평 슬라이드 (`FlatList` + `pagingEnabled`)
+  - [x] 하단 페이지 인디케이터 (점)
+  - [x] 슬라이드 1: 만다라트란? (핵심 목표 설명)
+  - [x] 슬라이드 2: 세부 목표 8개 설명
+  - [x] 슬라이드 3: 실행 과제 64개 설명
+  - [x] 슬라이드 4: "시작하기" CTA 버튼
+- [x] `mandalartStore.ts`에 `isFirstLaunch` 필드 + `setFirstLaunchDone` 액션 추가
+- [x] `RootNavigator.tsx`에 `OnboardingScreen` 등록
+- [x] `RootNavigator.tsx`에서 `isFirstLaunch` 기반 초기 라우트 분기
 
 ---
 

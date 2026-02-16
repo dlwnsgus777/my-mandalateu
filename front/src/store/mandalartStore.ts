@@ -214,6 +214,7 @@ const applyToProject = (
 interface MandalartState {
   projects: MandalartProject[];
   currentProject: MandalartProject | null;
+  isFirstLaunch: boolean;
   // 실행 과제
   toggleCell: (blockId: string, cellId: string) => void;
   updateCellTitle: (blockId: string, cellId: string, title: string) => void;
@@ -229,6 +230,8 @@ interface MandalartState {
   createProject: (title: string, coreGoal?: string) => void;
   switchProject: (projectId: string) => void;
   resetProject: () => void;
+  // 온보딩
+  setFirstLaunchDone: () => void;
 }
 
 // ─── 스토어 ───────────────────────────────────────────────────────────────────
@@ -236,6 +239,7 @@ interface MandalartState {
 export const useMandalartStore = create<MandalartState>()((set) => ({
   projects: [MOCK_PROJECT],
   currentProject: MOCK_PROJECT,
+  isFirstLaunch: true,
 
   // 실행 과제 완료 토글
   toggleCell: (blockId, cellId) =>
@@ -389,4 +393,7 @@ export const useMandalartStore = create<MandalartState>()((set) => ({
       projects: [MOCK_PROJECT],
       currentProject: MOCK_PROJECT,
     }),
+
+  // 온보딩 완료 처리
+  setFirstLaunchDone: () => set({ isFirstLaunch: false }),
 }));
