@@ -228,6 +228,7 @@ interface MandalartState {
   updateProjectTitle: (title: string) => void;
   createProject: (title: string, coreGoal?: string) => void;
   switchProject: (projectId: string) => void;
+  resetProject: () => void;
 }
 
 // ─── 스토어 ───────────────────────────────────────────────────────────────────
@@ -380,5 +381,12 @@ export const useMandalartStore = create<MandalartState>()((set) => ({
     set((state) => {
       const project = state.projects.find((p) => p.id === projectId);
       return project ? { currentProject: project } : state;
+    }),
+
+  // 데이터 초기화 (Mock 데이터로 복원)
+  resetProject: () =>
+    set({
+      projects: [MOCK_PROJECT],
+      currentProject: MOCK_PROJECT,
     }),
 }));
