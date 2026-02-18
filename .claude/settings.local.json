@@ -8,7 +8,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(npx tsc:*)",
       "Bash(curl:*)",
-      "Bash(gradle:*)"
+      "Bash(gradle:*)",
+      "Bash(./gradlew test:*)",
+      "Bash(bash gradlew test:*)"
     ]
   }
 }
