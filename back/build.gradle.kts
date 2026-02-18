@@ -56,4 +56,5 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    maxParallelForks = 1  // 단일 JVM 프로세스 (JUnit 5 내부 병렬 처리에 위임)
 }
