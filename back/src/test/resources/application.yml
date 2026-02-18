@@ -1,6 +1,18 @@
 spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;NON_KEYWORDS=USER
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
   jpa:
+    hibernate:
+      ddl-auto: create-drop
     properties:
       hibernate:
         format_sql: true
-    show-sql: true
+    show-sql: false
+
+jwt:
+  secret: test-secret-key-must-be-at-least-32-bytes!!
+  access-token-expiry: 3600000
+  refresh-token-expiry: 604800000
