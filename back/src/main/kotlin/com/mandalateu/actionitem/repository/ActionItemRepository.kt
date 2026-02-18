@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface ActionItemRepository : JpaRepository<ActionItem, Long> {
     fun findAllByStrategyId(strategyId: Long): List<ActionItem>
+    fun findAllByStrategyIdIn(strategyIds: List<Long>): List<ActionItem>
     fun findAllByStrategyIdInAndCompletedTrue(strategyIds: List<Long>): List<ActionItem>
     fun findAllByStrategyIdInAndDeadlineIsNotNull(strategyIds: List<Long>): List<ActionItem>
+    fun deleteAllByStrategyIdIn(strategyIds: List<Long>)
 }
