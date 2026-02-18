@@ -10,7 +10,8 @@
       "Bash(curl:*)",
       "Bash(gradle:*)",
       "Bash(./gradlew test:*)",
-      "Bash(bash gradlew test:*)"
+      "Bash(bash gradlew test:*)",
+      "Bash(cmd.exe /c \"gradlew.bat test --info 2>&1\")"
     ]
   }
 }

@@ -6,6 +6,7 @@ import com.mandalateu.auth.dto.SignupRequest
 import com.mandalateu.auth.dto.SignupResponse
 import com.mandalateu.auth.dto.TokenResponse
 import com.mandalateu.auth.jwt.JwtProvider
+import com.mandalateu.common.exception.DuplicateEmailException
 import com.mandalateu.user.domain.User
 import com.mandalateu.user.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -19,7 +20,7 @@ class AuthService(
 ) {
     fun signup(request: SignupRequest): SignupResponse {
         if (userRepository.findByEmail(request.email) != null) {
-            throw IllegalStateException("이미 사용 중인 이메일입니다: ${request.email}")
+            throw DuplicateEmailException("이미 사용 중인 이메일입니다: ${request.email}")
         }
         val user = userRepository.save(
             User(

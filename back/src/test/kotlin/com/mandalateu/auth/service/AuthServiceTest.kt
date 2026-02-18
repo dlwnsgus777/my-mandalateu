@@ -4,6 +4,7 @@ import com.mandalateu.auth.dto.LoginRequest
 import com.mandalateu.auth.dto.RefreshRequest
 import com.mandalateu.auth.dto.SignupRequest
 import com.mandalateu.auth.jwt.JwtProvider
+import com.mandalateu.common.exception.DuplicateEmailException
 import com.mandalateu.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -62,7 +63,7 @@ class AuthServiceTest {
     fun `signup - 중복 이메일로 가입 시 예외가 발생한다`() {
         authService.signup(defaultSignupRequest)
 
-        assertThrows<IllegalStateException> {
+        assertThrows<DuplicateEmailException> {
             authService.signup(defaultSignupRequest)
         }
     }

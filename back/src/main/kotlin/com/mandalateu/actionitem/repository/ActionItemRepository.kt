@@ -9,4 +9,9 @@ interface ActionItemRepository : JpaRepository<ActionItem, Long> {
     fun findAllByStrategyIdInAndCompletedTrue(strategyIds: List<Long>): List<ActionItem>
     fun findAllByStrategyIdInAndDeadlineIsNotNull(strategyIds: List<Long>): List<ActionItem>
     fun deleteAllByStrategyIdIn(strategyIds: List<Long>)
+    fun findAllByStrategyIdInAndCompletedAtBetween(
+        strategyIds: List<Long>,
+        start: java.time.LocalDateTime,
+        end: java.time.LocalDateTime
+    ): List<ActionItem>
 }
