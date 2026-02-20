@@ -10,10 +10,10 @@
 
 | Step | 내용 | 상태 |
 |------|------|------|
-| Step 1 | axios 설치 | ⬜ 미착수 |
-| Step 2 | API 클라이언트 구성 | ⬜ 미착수 |
-| Step 3 | Auth API 함수 | ⬜ 미착수 |
-| Step 4 | Auth Store | ⬜ 미착수 |
+| Step 1 | axios 설치 | ✅ 완료 |
+| Step 2 | API 클라이언트 구성 | ✅ 완료 |
+| Step 3 | Auth API 함수 | ✅ 완료 |
+| Step 4 | Auth Store | ✅ 완료 |
 | Step 5 | 네비게이션 구조 변경 | ⬜ 미착수 |
 | Step 6 | LoginScreen | ⬜ 미착수 |
 | Step 7 | SignupScreen | ⬜ 미착수 |
@@ -56,7 +56,6 @@ Signup → Login     (가입 성공)
 ```bash
 npm install axios
 ```
-
 ---
 
 ## Step 2 — API 클라이언트 (`src/api/client.ts`)
