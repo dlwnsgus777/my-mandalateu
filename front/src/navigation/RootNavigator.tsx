@@ -8,9 +8,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { useMandalartStore } from '../store/mandalartStore';
+import { useAuthStore } from '../store/authStore';
 
 // Screens
 import { OnboardingScreen } from '../screens/OnboardingScreen';
+import { LoginScreen } from '../screens/LoginScreen';
+import { SignupScreen } from '../screens/SignupScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { BlockDetailScreen } from '../screens/BlockDetailScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
@@ -19,13 +22,23 @@ import { CreateProjectScreen } from '../screens/CreateProjectScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
+const getInitialRoute = (
+  isAuthenticated: boolean,
+  isFirstLaunch: boolean
+): keyof RootStackParamList => {
+  if (isAuthenticated) return 'Home';
+  if (isFirstLaunch) return 'Onboarding';
+  return 'Login';
+};
+
 export const RootNavigator = () => {
   const isFirstLaunch = useMandalartStore((state) => state.isFirstLaunch);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={isFirstLaunch ? 'Onboarding' : 'Home'}
+        initialRouteName={getInitialRoute(isAuthenticated, isFirstLaunch)}
         screenOptions={{
           headerShown: true,
           headerStyle: {
@@ -40,6 +53,16 @@ export const RootNavigator = () => {
         <Stack.Screen
           name="Onboarding"
           component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Signup"
+          component={SignupScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen

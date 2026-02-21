@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/dlwnsgus777/my-mandalateu/issues"
   },
-  "homepage": "https://github.com/dlwnsgus777/my-mandalateu#readme"
+  "homepage": "https://github.com/dlwnsgus777/my-mandalateu#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }

@@ -14,10 +14,10 @@
 | Step 2 | API 클라이언트 구성 | ✅ 완료 |
 | Step 3 | Auth API 함수 | ✅ 완료 |
 | Step 4 | Auth Store | ✅ 완료 |
-| Step 5 | 네비게이션 구조 변경 | ⬜ 미착수 |
-| Step 6 | LoginScreen | ⬜ 미착수 |
-| Step 7 | SignupScreen | ⬜ 미착수 |
-| Step 8 | OnboardingScreen 수정 | ⬜ 미착수 |
+| Step 5 | 네비게이션 구조 변경 | ✅ 완료 |
+| Step 6 | LoginScreen | ✅ 완료 |
+| Step 7 | SignupScreen | ✅ 완료 |
+| Step 8 | OnboardingScreen 수정 | ✅ 완료 |
 
 ---
 

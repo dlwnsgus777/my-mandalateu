@@ -126,7 +126,7 @@ export const OnboardingScreen = () => {
   const handleNext = () => {
     if (isLastSlide) {
       setFirstLaunchDone();
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     } else {
       flatListRef.current?.scrollToIndex({ index: activeIndex + 1, animated: true });
     }
@@ -134,7 +134,7 @@ export const OnboardingScreen = () => {
 
   const handleSkip = () => {
     setFirstLaunchDone();
-    navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
   };
 
   return (
