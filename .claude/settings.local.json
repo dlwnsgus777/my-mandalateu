@@ -11,7 +11,15 @@
       "Bash(gradle:*)",
       "Bash(./gradlew test:*)",
       "Bash(bash gradlew test:*)",
-      "Bash(cmd.exe /c \"gradlew.bat test --info 2>&1\")"
+      "Bash(cmd.exe /c \"gradlew.bat test --info 2>&1\")",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_evaluate",
+      "Bash(python3:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(npx playwright test:*)",
+      "mcp__playwright__browser_click"
     ]
   }
 }

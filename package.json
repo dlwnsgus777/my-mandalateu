@@ -4,6 +4,9 @@
   "description": "만다라트 계획",
   "main": "index.js",
   "scripts": {
+    "dev": "concurrently --names \"BACK,FRONT\" --prefix-colors \"blue,green\" \"cd back && bash gradlew bootRun\" \"cd front && npm run web\"",
+    "e2e": "npx playwright test",
+    "e2e:ui": "npx playwright test --ui",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,6 +22,7 @@
   },
   "homepage": "https://github.com/dlwnsgus777/my-mandalateu#readme",
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "concurrently": "^9.2.1"
   }
 }
