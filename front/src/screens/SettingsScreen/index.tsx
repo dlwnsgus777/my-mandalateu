@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { RootStackParamList } from '../../types/navigation';
@@ -21,6 +22,12 @@ import { Colors } from '../../constants/colors';
 import { BorderRadius, FontSize, FontWeight, Shadow, Spacing } from '../../constants/theme';
 
 const APP_VERSION = '1.0.0';
+
+// TODO: 배포 시 실제 URL로 교체
+const LEGAL_URLS = {
+  termsOfService: 'https://my-mandalateu.com/terms',
+  privacyPolicy: 'https://my-mandalateu.com/privacy',
+} as const;
 
 type Props = StackScreenProps<RootStackParamList, 'Settings'>;
 
@@ -95,8 +102,13 @@ export const SettingsScreen = ({ navigation }: Props) => {
     }
   };
 
-  const handleComingSoon = () => {
-    Alert.alert('준비 중', '곧 제공될 예정입니다.');
+  const handleOpenURL = async (url: string) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert('오류', '링크를 열 수 없습니다.');
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -105,7 +117,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
       '탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.',
       [
         { text: '취소', style: 'cancel' },
-        { text: '탈퇴하기', style: 'destructive', onPress: handleComingSoon },
+        { text: '탈퇴하기', style: 'destructive', onPress: () => Alert.alert('준비 중', '곧 제공될 예정입니다.') },
       ],
     );
   };
@@ -218,14 +230,22 @@ export const SettingsScreen = ({ navigation }: Props) => {
         {/* 섹션: INFO */}
         <Text style={styles.sectionHeader}>Info</Text>
         <View style={styles.section}>
-          <TouchableOpacity style={styles.row} onPress={handleComingSoon} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => handleOpenURL(LEGAL_URLS.termsOfService)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.rowLabel}>이용약관</Text>
             <Text style={styles.rowChevron}>›</Text>
           </TouchableOpacity>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.row} onPress={handleComingSoon} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => handleOpenURL(LEGAL_URLS.privacyPolicy)}
+            activeOpacity={0.7}
+          >
             <Text style={styles.rowLabel}>개인정보처리방침</Text>
             <Text style={styles.rowChevron}>›</Text>
           </TouchableOpacity>
