@@ -1,7 +1,7 @@
 package com.mandalateu.common.exception
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.mandalateu.auth.dto.SignupRequest
+import com.mandalateu.auth.dto.GoogleLoginRequest
 import com.mandalateu.auth.service.AuthService
 import com.mandalateu.auth.jwt.JwtProvider
 import com.mandalateu.mandalart.service.MandalartService
@@ -41,9 +41,9 @@ class GlobalExceptionHandlerTest {
 
     @Test
     fun `400 - @Valid 검증 실패 시 VALIDATION_FAILED 코드와 fieldErrors가 반환된다`() {
-        val invalidRequest = SignupRequest(email = "not-an-email", password = "short", nickname = "a")
+        val invalidRequest = mapOf("idToken" to "")
 
-        mockMvc.post("/api/v1/auth/signup") {
+        mockMvc.post("/api/v1/auth/google") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(invalidRequest)
         }.andExpect {
@@ -57,14 +57,14 @@ class GlobalExceptionHandlerTest {
 
     @Test
     fun `400 - fieldErrors에 잘못된 필드명이 포함된다`() {
-        val invalidRequest = mapOf("email" to "", "password" to "password123", "nickname" to "닉네임")
+        val invalidRequest = mapOf("idToken" to "")
 
-        mockMvc.post("/api/v1/auth/signup") {
+        mockMvc.post("/api/v1/auth/google") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(invalidRequest)
         }.andExpect {
             status { isBadRequest() }
-            jsonPath("$.fieldErrors[?(@.field == 'email')]") { isNotEmpty() }
+            jsonPath("$.fieldErrors[?(@.field == 'idToken')]") { isNotEmpty() }
         }
     }
 
@@ -98,25 +98,6 @@ class GlobalExceptionHandlerTest {
             status { isForbidden() }
             jsonPath("$.code") { value("FORBIDDEN") }
             jsonPath("$.message") { value("접근 권한이 없습니다.") }
-        }
-    }
-
-    // ───────────── 409 Conflict ─────────────
-
-    @Test
-    fun `409 - DuplicateEmailException 발생 시 DUPLICATE_EMAIL 코드가 반환된다`() {
-        given(authService.signup(any()))
-            .willThrow(DuplicateEmailException("이미 사용 중인 이메일입니다: test@test.com"))
-
-        val request = SignupRequest(email = "test@test.com", password = "password123", nickname = "테스트")
-
-        mockMvc.post("/api/v1/auth/signup") {
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect {
-            status { isConflict() }
-            jsonPath("$.code") { value("DUPLICATE_EMAIL") }
-            jsonPath("$.message") { value("이미 사용 중인 이메일입니다: test@test.com") }
         }
     }
 
