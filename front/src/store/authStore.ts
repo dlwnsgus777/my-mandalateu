@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, UserInfo } from '../api/auth';
+import { userApi } from '../api/user';
 import { registerAuthHandlers } from '../api/client';
 
 // ─── 타입 ─────────────────────────────────────────────────────────────────────
@@ -14,6 +15,7 @@ interface AuthState {
   loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   setTokens: (accessToken: string, refreshToken: string, user: UserInfo) => void;
+  updateNickname: (nickname: string) => Promise<void>;
 }
 
 // ─── 내부 헬퍼 ────────────────────────────────────────────────────────────────
@@ -56,6 +58,11 @@ export const useAuthStore = create<AuthState>()(
 
       setTokens: (accessToken, refreshToken, user) => {
         set({ accessToken, refreshToken, user, isAuthenticated: true });
+      },
+
+      updateNickname: async (nickname: string) => {
+        const { data } = await userApi.updateNickname({ nickname });
+        set({ user: data });
       },
     }),
     {
