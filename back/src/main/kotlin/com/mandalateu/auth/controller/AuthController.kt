@@ -5,9 +5,12 @@ import com.mandalateu.auth.dto.RefreshRequest
 import com.mandalateu.auth.dto.TokenResponse
 import com.mandalateu.auth.service.AuthService
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -22,4 +25,9 @@ class AuthController(
     @PostMapping("/refresh")
     fun refresh(@RequestBody @Valid request: RefreshRequest): TokenResponse =
         authService.refresh(request)
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun logout(@AuthenticationPrincipal userId: Long) =
+        authService.logout(userId)
 }

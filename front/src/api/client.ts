@@ -5,15 +5,21 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:8080'
 // ─── Auth 핸들러 참조 (authStore가 초기화 후 등록) ────────────────────────────
 // 순환 참조 방지: client.ts는 authStore를 직접 import하지 않음
 // authStore → authApi → client (단방향)
+interface UserInfo {
+  id: number;
+  email: string;
+  nickname: string;
+}
+
 let _getAccessToken: () => string | null = () => null;
 let _getRefreshToken: () => string | null = () => null;
-let _setTokens: (accessToken: string, refreshToken: string) => void = () => {};
+let _setTokens: (accessToken: string, refreshToken: string, user: UserInfo) => void = () => {};
 let _logout: () => void = () => {};
 
 export const registerAuthHandlers = (handlers: {
   getAccessToken: () => string | null;
   getRefreshToken: () => string | null;
-  setTokens: (accessToken: string, refreshToken: string) => void;
+  setTokens: (accessToken: string, refreshToken: string, user: UserInfo) => void;
   logout: () => void;
 }) => {
   _getAccessToken = handlers.getAccessToken;
@@ -88,7 +94,7 @@ apiClient.interceptors.response.use(
 
       // 인터셉터 루프 방지: 갱신 요청은 raw axios 사용
       const { data } = await axios.post(`${BASE_URL}/api/v1/auth/refresh`, { refreshToken });
-      _setTokens(data.accessToken, data.refreshToken);
+      _setTokens(data.accessToken, data.refreshToken, data.user);
       processQueue(null, data.accessToken);
 
       originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;

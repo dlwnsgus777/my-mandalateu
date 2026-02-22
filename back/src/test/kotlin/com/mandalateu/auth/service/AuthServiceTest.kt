@@ -60,6 +60,16 @@ class AuthServiceTest {
     }
 
     @Test
+    fun `loginWithGoogle - 발급된 refreshToken이 DB에 저장된다`() {
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
+
+        val response = authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
+
+        val user = userRepository.findByProviderAndProviderId("google", "google-sub-001")!!
+        assertThat(user.refreshToken).isEqualTo(response.refreshToken)
+    }
+
+    @Test
     fun `loginWithGoogle - 기존 유저면 새로 저장하지 않고 토큰을 발급한다`() {
         userRepository.save(makeUser())
         given(googleTokenVerifier.verify(any())).willReturn(makePayload())
@@ -105,10 +115,10 @@ class AuthServiceTest {
 
     @Test
     fun `refresh - 유효한 리프레시 토큰으로 새 토큰을 발급받는다`() {
-        val saved = userRepository.save(makeUser())
-        val refreshToken = jwtProvider.generateRefreshToken(saved.id)
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
+        val loginResponse = authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
 
-        val response = authService.refresh(RefreshRequest(refreshToken))
+        val response = authService.refresh(RefreshRequest(loginResponse.refreshToken))
 
         assertThat(response.accessToken).isNotBlank()
         assertThat(response.refreshToken).isNotBlank()
@@ -119,11 +129,35 @@ class AuthServiceTest {
     @Test
     fun `refresh - 재발급된 토큰에서 동일한 userId를 추출할 수 있다`() {
         val saved = userRepository.save(makeUser())
-        val refreshToken = jwtProvider.generateRefreshToken(saved.id)
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
+        val loginResponse = authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
 
-        val response = authService.refresh(RefreshRequest(refreshToken))
+        val response = authService.refresh(RefreshRequest(loginResponse.refreshToken))
 
         assertThat(jwtProvider.getUserIdFromToken(response.accessToken)).isEqualTo(saved.id)
+    }
+
+    @Test
+    fun `refresh - 재발급 후 DB에 새 refreshToken이 저장된다`() {
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
+        val loginResponse = authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
+
+        val refreshResponse = authService.refresh(RefreshRequest(loginResponse.refreshToken))
+
+        val user = userRepository.findByProviderAndProviderId("google", "google-sub-001")!!
+        assertThat(user.refreshToken).isEqualTo(refreshResponse.refreshToken)
+        assertThat(user.refreshToken).isNotEqualTo(loginResponse.refreshToken)
+    }
+
+    @Test
+    fun `refresh - DB에 저장된 토큰과 다르면 예외가 발생한다`() {
+        val saved = userRepository.save(makeUser())
+        val otherToken = jwtProvider.generateRefreshToken(saved.id)
+        // DB에는 저장하지 않고 그냥 다른 refresh token 사용
+
+        assertThrows<IllegalArgumentException> {
+            authService.refresh(RefreshRequest(otherToken))
+        }
     }
 
     @Test
@@ -140,6 +174,33 @@ class AuthServiceTest {
 
         assertThrows<IllegalArgumentException> {
             authService.refresh(RefreshRequest(accessToken))
+        }
+    }
+
+    // ───────────── logout ─────────────
+
+    @Test
+    fun `logout - 로그아웃 시 DB의 refreshToken이 null이 된다`() {
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
+        authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
+        val user = userRepository.findByProviderAndProviderId("google", "google-sub-001")!!
+        assertThat(user.refreshToken).isNotNull()
+
+        authService.logout(user.id)
+
+        assertThat(user.refreshToken).isNull()
+    }
+
+    @Test
+    fun `logout - 로그아웃 후 기존 refreshToken으로 갱신하면 예외가 발생한다`() {
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
+        val loginResponse = authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
+        val user = userRepository.findByProviderAndProviderId("google", "google-sub-001")!!
+
+        authService.logout(user.id)
+
+        assertThrows<IllegalArgumentException> {
+            authService.refresh(RefreshRequest(loginResponse.refreshToken))
         }
     }
 }

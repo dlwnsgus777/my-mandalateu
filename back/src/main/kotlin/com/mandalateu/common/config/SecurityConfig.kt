@@ -28,7 +28,8 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/google").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
                     .anyRequest().authenticated()
             }
             .exceptionHandling {

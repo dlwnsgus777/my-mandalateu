@@ -22,6 +22,9 @@ class User(
     @Column(nullable = false, length = 255)
     val providerId: String,
 
+    @Column(length = 500)
+    var refreshToken: String? = null,
+
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()
 )
