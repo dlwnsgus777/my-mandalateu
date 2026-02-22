@@ -1,18 +1,21 @@
 package com.mandalateu.auth.service
 
-import com.mandalateu.auth.dto.LoginRequest
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
+import com.mandalateu.auth.dto.GoogleLoginRequest
 import com.mandalateu.auth.dto.RefreshRequest
-import com.mandalateu.auth.dto.SignupRequest
 import com.mandalateu.auth.jwt.JwtProvider
-import com.mandalateu.common.exception.DuplicateEmailException
+import com.mandalateu.auth.oauth.GoogleTokenVerifier
+import com.mandalateu.user.domain.User
 import com.mandalateu.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.kotlin.any
+import org.mockito.kotlin.given
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.transaction.annotation.Transactional
 
 @SpringBootTest
@@ -22,137 +25,105 @@ class AuthServiceTest {
     @Autowired lateinit var authService: AuthService
     @Autowired lateinit var userRepository: UserRepository
     @Autowired lateinit var jwtProvider: JwtProvider
-    @Autowired lateinit var passwordEncoder: PasswordEncoder
 
-    private val defaultSignupRequest = SignupRequest(
-        email = "test@test.com",
-        password = "password123",
-        nickname = "테스터"
-    )
+    @MockitoBean
+    lateinit var googleTokenVerifier: GoogleTokenVerifier
+
+    private fun makePayload(sub: String = "google-sub-001", email: String = "test@test.com", name: String = "테스터"): GoogleIdToken.Payload {
+        val payload = GoogleIdToken.Payload()
+        payload.subject = sub
+        payload.email = email
+        payload["name"] = name
+        return payload
+    }
+
+    private fun makeUser(email: String = "test@test.com", providerId: String = "google-sub-001") =
+        User(email = email, nickname = "테스터", provider = "google", providerId = providerId)
 
     @BeforeEach
     fun setUp() {
         userRepository.deleteAll()
     }
 
-    // ───────────── signup ─────────────
+    // ───────────── loginWithGoogle ─────────────
 
     @Test
-    fun `signup - 새 유저를 등록하고 DB에 저장된다`() {
-        val response = authService.signup(defaultSignupRequest)
+    fun `loginWithGoogle - 신규 유저면 DB에 저장 후 토큰을 발급한다`() {
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
 
-        assertThat(response.id).isGreaterThan(0)
-        assertThat(response.email).isEqualTo(defaultSignupRequest.email)
-        assertThat(response.nickname).isEqualTo(defaultSignupRequest.nickname)
-
-        val savedUser = userRepository.findByEmail(defaultSignupRequest.email)
-        assertThat(savedUser).isNotNull()
-        assertThat(savedUser!!.nickname).isEqualTo(defaultSignupRequest.nickname)
-    }
-
-    @Test
-    fun `signup - 비밀번호는 BCrypt로 해시되어 저장된다`() {
-        authService.signup(defaultSignupRequest)
-
-        val savedUser = userRepository.findByEmail(defaultSignupRequest.email)!!
-        assertThat(savedUser.password).isNotEqualTo(defaultSignupRequest.password)
-        assertThat(passwordEncoder.matches(defaultSignupRequest.password, savedUser.password)).isTrue()
-    }
-
-    @Test
-    fun `signup - 중복 이메일로 가입 시 예외가 발생한다`() {
-        authService.signup(defaultSignupRequest)
-
-        assertThrows<DuplicateEmailException> {
-            authService.signup(defaultSignupRequest)
-        }
-    }
-
-    @Test
-    fun `signup - 다른 이메일로는 중복 없이 가입된다`() {
-        authService.signup(defaultSignupRequest)
-        val anotherRequest = defaultSignupRequest.copy(email = "other@test.com", nickname = "다른유저")
-
-        val response = authService.signup(anotherRequest)
-
-        assertThat(response.email).isEqualTo("other@test.com")
-        assertThat(userRepository.findAll()).hasSize(2)
-    }
-
-    // ───────────── login ─────────────
-
-    @Test
-    fun `login - 올바른 자격증명으로 유효한 토큰을 발급받는다`() {
-        authService.signup(defaultSignupRequest)
-
-        val response = authService.login(
-            LoginRequest(email = defaultSignupRequest.email, password = defaultSignupRequest.password)
-        )
+        val response = authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
 
         assertThat(response.accessToken).isNotBlank()
         assertThat(response.refreshToken).isNotBlank()
         assertThat(response.tokenType).isEqualTo("Bearer")
-        assertThat(jwtProvider.isAccessToken(response.accessToken)).isTrue()
-        assertThat(jwtProvider.isRefreshToken(response.refreshToken)).isTrue()
+        assertThat(userRepository.findByProviderAndProviderId("google", "google-sub-001")).isNotNull()
     }
 
     @Test
-    fun `login - 발급된 액세스 토큰에서 userId를 추출할 수 있다`() {
-        val signupResponse = authService.signup(defaultSignupRequest)
-        val loginResponse = authService.login(
-            LoginRequest(email = defaultSignupRequest.email, password = defaultSignupRequest.password)
-        )
+    fun `loginWithGoogle - 기존 유저면 새로 저장하지 않고 토큰을 발급한다`() {
+        userRepository.save(makeUser())
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
 
-        val userIdFromToken = jwtProvider.getUserIdFromToken(loginResponse.accessToken)
+        authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
 
-        assertThat(userIdFromToken).isEqualTo(signupResponse.id)
+        assertThat(userRepository.findAll()).hasSize(1)
     }
 
     @Test
-    fun `login - 존재하지 않는 이메일이면 예외가 발생한다`() {
+    fun `loginWithGoogle - 발급된 액세스 토큰에서 userId를 추출할 수 있다`() {
+        val saved = userRepository.save(makeUser())
+        given(googleTokenVerifier.verify(any())).willReturn(makePayload())
+
+        val response = authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
+
+        assertThat(jwtProvider.getUserIdFromToken(response.accessToken)).isEqualTo(saved.id)
+    }
+
+    @Test
+    fun `loginWithGoogle - 유효하지 않은 Google 토큰이면 예외가 발생한다`() {
+        given(googleTokenVerifier.verify(any())).willReturn(null)
+
         assertThrows<IllegalArgumentException> {
-            authService.login(LoginRequest(email = "notexist@test.com", password = "password123"))
+            authService.loginWithGoogle(GoogleLoginRequest(idToken = "invalid-token"))
         }
     }
 
     @Test
-    fun `login - 비밀번호가 틀리면 예외가 발생한다`() {
-        authService.signup(defaultSignupRequest)
+    fun `loginWithGoogle - name 클레임이 없으면 이메일 앞부분을 닉네임으로 사용한다`() {
+        val payload = GoogleIdToken.Payload()
+        payload.subject = "google-sub-001"
+        payload.email = "user@gmail.com"
+        given(googleTokenVerifier.verify(any())).willReturn(payload)
 
-        assertThrows<IllegalArgumentException> {
-            authService.login(
-                LoginRequest(email = defaultSignupRequest.email, password = "wrong_password")
-            )
-        }
+        authService.loginWithGoogle(GoogleLoginRequest(idToken = "valid-token"))
+
+        val saved = userRepository.findByProviderAndProviderId("google", "google-sub-001")
+        assertThat(saved!!.nickname).isEqualTo("user")
     }
 
     // ───────────── refresh ─────────────
 
     @Test
     fun `refresh - 유효한 리프레시 토큰으로 새 토큰을 발급받는다`() {
-        authService.signup(defaultSignupRequest)
-        val loginResponse = authService.login(
-            LoginRequest(email = defaultSignupRequest.email, password = defaultSignupRequest.password)
-        )
+        val saved = userRepository.save(makeUser())
+        val refreshToken = jwtProvider.generateRefreshToken(saved.id)
 
-        val refreshResponse = authService.refresh(RefreshRequest(loginResponse.refreshToken))
+        val response = authService.refresh(RefreshRequest(refreshToken))
 
-        assertThat(refreshResponse.accessToken).isNotBlank()
-        assertThat(refreshResponse.refreshToken).isNotBlank()
-        assertThat(jwtProvider.isAccessToken(refreshResponse.accessToken)).isTrue()
-        assertThat(jwtProvider.isRefreshToken(refreshResponse.refreshToken)).isTrue()
+        assertThat(response.accessToken).isNotBlank()
+        assertThat(response.refreshToken).isNotBlank()
+        assertThat(jwtProvider.isAccessToken(response.accessToken)).isTrue()
+        assertThat(jwtProvider.isRefreshToken(response.refreshToken)).isTrue()
     }
 
     @Test
     fun `refresh - 재발급된 토큰에서 동일한 userId를 추출할 수 있다`() {
-        val signupResponse = authService.signup(defaultSignupRequest)
-        val loginResponse = authService.login(
-            LoginRequest(email = defaultSignupRequest.email, password = defaultSignupRequest.password)
-        )
+        val saved = userRepository.save(makeUser())
+        val refreshToken = jwtProvider.generateRefreshToken(saved.id)
 
-        val refreshResponse = authService.refresh(RefreshRequest(loginResponse.refreshToken))
+        val response = authService.refresh(RefreshRequest(refreshToken))
 
-        assertThat(jwtProvider.getUserIdFromToken(refreshResponse.accessToken)).isEqualTo(signupResponse.id)
+        assertThat(jwtProvider.getUserIdFromToken(response.accessToken)).isEqualTo(saved.id)
     }
 
     @Test
@@ -164,13 +135,11 @@ class AuthServiceTest {
 
     @Test
     fun `refresh - 액세스 토큰을 리프레시에 사용하면 예외가 발생한다`() {
-        authService.signup(defaultSignupRequest)
-        val loginResponse = authService.login(
-            LoginRequest(email = defaultSignupRequest.email, password = defaultSignupRequest.password)
-        )
+        val saved = userRepository.save(makeUser())
+        val accessToken = jwtProvider.generateAccessToken(saved.id)
 
         assertThrows<IllegalArgumentException> {
-            authService.refresh(RefreshRequest(loginResponse.accessToken))
+            authService.refresh(RefreshRequest(accessToken))
         }
     }
 }

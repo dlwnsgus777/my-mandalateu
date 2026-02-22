@@ -1,44 +1,38 @@
 package com.mandalateu.auth.service
 
-import com.mandalateu.auth.dto.LoginRequest
+import com.mandalateu.auth.dto.GoogleLoginRequest
 import com.mandalateu.auth.dto.RefreshRequest
-import com.mandalateu.auth.dto.SignupRequest
-import com.mandalateu.auth.dto.SignupResponse
 import com.mandalateu.auth.dto.TokenResponse
 import com.mandalateu.auth.jwt.JwtProvider
-import com.mandalateu.common.exception.DuplicateEmailException
+import com.mandalateu.auth.oauth.GoogleTokenVerifier
 import com.mandalateu.user.domain.User
 import com.mandalateu.user.repository.UserRepository
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
 class AuthService(
     private val userRepository: UserRepository,
     private val jwtProvider: JwtProvider,
-    private val passwordEncoder: PasswordEncoder
+    private val googleTokenVerifier: GoogleTokenVerifier
 ) {
-    fun signup(request: SignupRequest): SignupResponse {
-        if (userRepository.findByEmail(request.email) != null) {
-            throw DuplicateEmailException("이미 사용 중인 이메일입니다: ${request.email}")
-        }
-        val user = userRepository.save(
-            User(
-                email = request.email,
-                password = passwordEncoder.encode(request.password),
-                nickname = request.nickname
+    fun loginWithGoogle(request: GoogleLoginRequest): TokenResponse {
+        val payload = googleTokenVerifier.verify(request.idToken)
+            ?: throw IllegalArgumentException("유효하지 않은 Google 토큰입니다.")
+
+        val email = payload.email
+        val nickname = (payload["name"] as? String) ?: email.substringBefore("@")
+        val providerId = payload.subject
+
+        val user = userRepository.findByProviderAndProviderId("google", providerId)
+            ?: userRepository.save(
+                User(
+                    email = email,
+                    nickname = nickname,
+                    provider = "google",
+                    providerId = providerId
+                )
             )
-        )
-        return SignupResponse(id = user.id, email = user.email, nickname = user.nickname)
-    }
 
-    fun login(request: LoginRequest): TokenResponse {
-        val user = userRepository.findByEmail(request.email)
-            ?: throw IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.")
-
-        if (!passwordEncoder.matches(request.password, user.password)) {
-            throw IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.")
-        }
         return TokenResponse(
             accessToken = jwtProvider.generateAccessToken(user.id),
             refreshToken = jwtProvider.generateRefreshToken(user.id)

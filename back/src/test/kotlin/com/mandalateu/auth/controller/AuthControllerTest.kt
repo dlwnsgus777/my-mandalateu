@@ -1,10 +1,8 @@
 package com.mandalateu.auth.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.mandalateu.auth.dto.LoginRequest
+import com.mandalateu.auth.dto.GoogleLoginRequest
 import com.mandalateu.auth.dto.RefreshRequest
-import com.mandalateu.auth.dto.SignupRequest
-import com.mandalateu.auth.dto.SignupResponse
 import com.mandalateu.auth.dto.TokenResponse
 import com.mandalateu.auth.service.AuthService
 import org.junit.jupiter.api.Test
@@ -31,70 +29,15 @@ class AuthControllerTest {
     @MockitoBean
     lateinit var authService: AuthService
 
-    // ───────────── POST /api/v1/auth/signup ─────────────
+    // ───────────── POST /api/v1/auth/google ─────────────
 
     @Test
-    fun `signup - 정상 요청이면 201과 SignupResponse를 반환한다`() {
-        val request = SignupRequest(email = "new@test.com", password = "password123", nickname = "유저")
-        val response = SignupResponse(id = 1L, email = "new@test.com", nickname = "유저")
-        given(authService.signup(any())).willReturn(response)
-
-        mockMvc.post("/api/v1/auth/signup") {
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect {
-            status { isCreated() }
-            jsonPath("$.id") { value(1L) }
-            jsonPath("$.email") { value("new@test.com") }
-            jsonPath("$.nickname") { value("유저") }
-        }
-    }
-
-    @Test
-    fun `signup - 이메일 형식이 잘못되면 400을 반환한다`() {
-        val request = mapOf("email" to "invalid-email", "password" to "password123", "nickname" to "유저")
-
-        mockMvc.post("/api/v1/auth/signup") {
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect {
-            status { isBadRequest() }
-        }
-    }
-
-    @Test
-    fun `signup - 비밀번호가 8자 미만이면 400을 반환한다`() {
-        val request = mapOf("email" to "test@test.com", "password" to "short", "nickname" to "유저")
-
-        mockMvc.post("/api/v1/auth/signup") {
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect {
-            status { isBadRequest() }
-        }
-    }
-
-    @Test
-    fun `signup - 필수 필드가 빠지면 400을 반환한다`() {
-        val request = mapOf("email" to "test@test.com")
-
-        mockMvc.post("/api/v1/auth/signup") {
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(request)
-        }.andExpect {
-            status { isBadRequest() }
-        }
-    }
-
-    // ───────────── POST /api/v1/auth/login ─────────────
-
-    @Test
-    fun `login - 정상 요청이면 200과 TokenResponse를 반환한다`() {
-        val request = LoginRequest(email = "test@test.com", password = "password123")
+    fun `googleLogin - 정상 요청이면 200과 TokenResponse를 반환한다`() {
+        val request = GoogleLoginRequest(idToken = "valid-google-id-token")
         val response = TokenResponse(accessToken = "access-token", refreshToken = "refresh-token")
-        given(authService.login(any())).willReturn(response)
+        given(authService.loginWithGoogle(any())).willReturn(response)
 
-        mockMvc.post("/api/v1/auth/login") {
+        mockMvc.post("/api/v1/auth/google") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
         }.andExpect {
@@ -106,12 +49,22 @@ class AuthControllerTest {
     }
 
     @Test
-    fun `login - 이메일이 빈 값이면 400을 반환한다`() {
-        val request = mapOf("email" to "", "password" to "password123")
+    fun `googleLogin - idToken이 빈 값이면 400을 반환한다`() {
+        val request = mapOf("idToken" to "")
 
-        mockMvc.post("/api/v1/auth/login") {
+        mockMvc.post("/api/v1/auth/google") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+        }.andExpect {
+            status { isBadRequest() }
+        }
+    }
+
+    @Test
+    fun `googleLogin - idToken 필드가 없으면 400을 반환한다`() {
+        mockMvc.post("/api/v1/auth/google") {
+            contentType = MediaType.APPLICATION_JSON
+            content = "{}"
         }.andExpect {
             status { isBadRequest() }
         }

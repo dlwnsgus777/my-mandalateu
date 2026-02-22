@@ -13,11 +13,14 @@ class User(
     @Column(unique = true, nullable = false, length = 255)
     var email: String,
 
-    @Column(nullable = false, length = 255)
-    var password: String,
-
     @Column(nullable = false, length = 50)
     var nickname: String,
+
+    @Column(nullable = false, length = 50)
+    val provider: String,
+
+    @Column(nullable = false, length = 255)
+    val providerId: String,
 
     @Column(nullable = false, updatable = false)
     val createdAt: LocalDateTime = LocalDateTime.now()

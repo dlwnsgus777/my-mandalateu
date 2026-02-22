@@ -1,13 +1,12 @@
 package com.mandalateu.strategy.service
 
-import com.mandalateu.auth.dto.SignupRequest
-import com.mandalateu.auth.service.AuthService
 import com.mandalateu.common.exception.EntityNotFoundException
 import com.mandalateu.common.exception.ForbiddenException
 import com.mandalateu.mandalart.dto.MandalartCreateRequest
 import com.mandalateu.mandalart.service.MandalartService
 import com.mandalateu.strategy.dto.StrategyUpdateRequest
 import com.mandalateu.strategy.repository.StrategyRepository
+import com.mandalateu.user.domain.User
 import com.mandalateu.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -22,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional
 class StrategyServiceTest {
 
     @Autowired lateinit var strategyService: StrategyService
-    @Autowired lateinit var authService: AuthService
     @Autowired lateinit var mandalartService: MandalartService
     @Autowired lateinit var strategyRepository: StrategyRepository
     @Autowired lateinit var userRepository: UserRepository
@@ -35,8 +33,8 @@ class StrategyServiceTest {
     @BeforeEach
     fun setUp() {
         userRepository.deleteAll()
-        userId = authService.signup(SignupRequest("owner@test.com", "password123", "소유자")).id
-        otherUserId = authService.signup(SignupRequest("other@test.com", "password123", "다른유저")).id
+        userId = userRepository.save(User(email = "owner@test.com", nickname = "소유자", provider = "google", providerId = "sub-owner")).id
+        otherUserId = userRepository.save(User(email = "other@test.com", nickname = "다른유저", provider = "google", providerId = "sub-other")).id
 
         val mandalart = mandalartService.create(userId, MandalartCreateRequest("목표", "핵심"))
         mandalartId = mandalart.id

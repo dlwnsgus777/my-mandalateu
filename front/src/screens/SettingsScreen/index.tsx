@@ -8,14 +8,38 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import { StackScreenProps } from '@react-navigation/stack';
+import { RootStackParamList } from '../../types/navigation';
 import { useMandalartStore } from '../../store/mandalartStore';
+import { useAuthStore } from '../../store/authStore';
 import { Colors } from '../../constants/colors';
 import { BorderRadius, FontSize, FontWeight, Shadow, Spacing } from '../../constants/theme';
 
 const APP_VERSION = '1.0.0';
 
-export const SettingsScreen = () => {
+type Props = StackScreenProps<RootStackParamList, 'Settings'>;
+
+export const SettingsScreen = ({ navigation }: Props) => {
   const resetProject = useMandalartStore((state) => state.resetProject);
+  const logout = useAuthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    Alert.alert(
+      '로그아웃',
+      '정말 로그아웃 하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '로그아웃',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          },
+        },
+      ],
+    );
+  };
 
   const handleReset = () => {
     Alert.alert(
@@ -45,6 +69,18 @@ export const SettingsScreen = () => {
             <Text style={styles.rowLabel}>버전</Text>
             <Text style={styles.rowValue}>{APP_VERSION}</Text>
           </View>
+        </View>
+
+        {/* 섹션: 계정 */}
+        <Text style={styles.sectionHeader}>계정</Text>
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.destructiveRow}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.destructiveText}>로그아웃</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 섹션: 데이터 관리 */}

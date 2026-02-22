@@ -24,5 +24,8 @@ jwt:
   access-token-expiry: 3600000       # 1시간 (ms)
   refresh-token-expiry: 604800000    # 7일 (ms)
 
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
+
 server:
   port: 8080
