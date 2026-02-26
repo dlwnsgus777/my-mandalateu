@@ -19,6 +19,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { ColorPicker } from '../../components/ColorPicker';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -66,6 +67,20 @@ export const HomeScreen = () => {
     opacity.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
     scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
   }, []);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Settings')}
+          style={{ marginRight: 12 }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Icon name="settings" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const entranceStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

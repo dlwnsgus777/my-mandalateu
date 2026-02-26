@@ -40,40 +40,24 @@ export const SettingsScreen = ({ navigation }: Props) => {
   const [isNicknameModalVisible, setIsNicknameModalVisible] = useState(false);
   const [nicknameInput, setNicknameInput] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+  const [isResetModalVisible, setIsResetModalVisible] = useState(false);
 
   const avatarLetter = user?.nickname?.charAt(0).toUpperCase() ?? '?';
 
-  const handleLogout = () => {
-    Alert.alert(
-      '로그아웃',
-      '정말 로그아웃 하시겠습니까?',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '로그아웃',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-          },
-        },
-      ],
-    );
+  const handleLogout = () => setIsLogoutModalVisible(true);
+
+  const handleLogoutConfirm = async () => {
+    setIsLogoutModalVisible(false);
+    await logout();
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
   };
 
-  const handleReset = () => {
-    Alert.alert(
-      '데이터 초기화',
-      '모든 데이터가 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다.',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '초기화',
-          style: 'destructive',
-          onPress: () => resetProject(),
-        },
-      ],
-    );
+  const handleReset = () => setIsResetModalVisible(true);
+
+  const handleResetConfirm = () => {
+    setIsResetModalVisible(false);
+    resetProject();
   };
 
   const handleNicknameChange = () => {
@@ -124,6 +108,76 @@ export const SettingsScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* 로그아웃 확인 모달 */}
+      <Modal
+        visible={isLogoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsLogoutModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsLogoutModalVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>로그아웃</Text>
+              <Text style={styles.modalMessage}>정말 로그아웃 하시겠습니까?</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setIsLogoutModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalConfirmButton, styles.modalDestructiveButton]}
+                  onPress={handleLogoutConfirm}
+                >
+                  <Text style={styles.modalConfirmText}>로그아웃</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 데이터 초기화 확인 모달 */}
+      <Modal
+        visible={isResetModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsResetModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsResetModalVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>데이터 초기화</Text>
+              <Text style={styles.modalMessage}>모든 데이터가 초기 상태로 돌아갑니다. 이 작업은 되돌릴 수 없습니다.</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setIsResetModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalConfirmButton, styles.modalDestructiveButton]}
+                  onPress={handleResetConfirm}
+                >
+                  <Text style={styles.modalConfirmText}>초기화</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
       {/* 닉네임 변경 모달 */}
       <Modal
         visible={isNicknameModalVisible}
@@ -443,7 +497,16 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semibold,
     color: Colors.light.text,
+    marginBottom: Spacing.sm,
+  },
+  modalMessage: {
+    fontSize: FontSize.sm,
+    color: Colors.light.textSecondary,
     marginBottom: Spacing.md,
+    lineHeight: 20,
+  },
+  modalDestructiveButton: {
+    backgroundColor: Colors.light.priorityHigh,
   },
   modalInput: {
     borderWidth: 1,
