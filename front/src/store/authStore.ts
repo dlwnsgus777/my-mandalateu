@@ -50,8 +50,9 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await authApi.logout();
+        } catch {
+          // 서버 오류는 무시 - 클라이언트는 항상 로그아웃 처리
         } finally {
-          // 서버 요청 실패해도 클라이언트 상태는 반드시 초기화
           set(clearAuthState());
         }
       },

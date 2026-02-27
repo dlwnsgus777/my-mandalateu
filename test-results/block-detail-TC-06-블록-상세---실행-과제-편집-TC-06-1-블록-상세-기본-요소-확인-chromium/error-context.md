@@ -1,0 +1,93 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e8]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - link "My Mandalateu, back" [ref=e10] [cursor=pointer]:
+            - /url: /Home
+          - heading "운동 루틴" [level=1] [ref=e13]
+          - generic [ref=e14]: 3/8
+  - generic [ref=e16]:
+    - generic [ref=e19]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: 1번째 영역 · 좌상단
+        - generic [ref=e23]: 운동 루틴
+        - generic [ref=e27]: 3/8 · 38%
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]: 실행 과제
+          - generic [ref=e41]: 3 / 8 완료
+        - generic [ref=e44]: 38%
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - generic [ref=e50] [cursor=pointer]: ↩️ 미완료
+            - generic [ref=e53] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e56] [cursor=pointer]:
+              - generic [ref=e58]: ✅
+              - generic [ref=e59]: 주 3회 헬스
+          - generic [ref=e60]:
+            - generic [ref=e63] [cursor=pointer]: ↩️ 미완료
+            - generic [ref=e66] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e69] [cursor=pointer]:
+              - generic [ref=e71]: ✅
+              - generic [ref=e72]: 매일 스트레칭
+          - generic [ref=e73]:
+            - generic [ref=e76] [cursor=pointer]: ✅ 완료
+            - generic [ref=e79] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e82] [cursor=pointer]:
+              - generic [ref=e84]: ⬜
+              - generic [ref=e85]: 런닝 30분
+        - generic [ref=e86]:
+          - generic [ref=e87]:
+            - generic [ref=e90] [cursor=pointer]: ✅ 완료
+            - generic [ref=e93] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e96] [cursor=pointer]:
+              - generic [ref=e98]: ⬜
+              - generic [ref=e99]: 수영 배우기
+          - generic [ref=e100]:
+            - generic [ref=e101]: 🎯
+            - generic [ref=e102]: 운동 루틴
+          - generic [ref=e103]:
+            - generic [ref=e106] [cursor=pointer]: ↩️ 미완료
+            - generic [ref=e109] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e112] [cursor=pointer]:
+              - generic [ref=e114]: ✅
+              - generic [ref=e115]: 자전거 타기
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - generic [ref=e120] [cursor=pointer]: ✅ 완료
+            - generic [ref=e123] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e126] [cursor=pointer]:
+              - generic [ref=e128]: ⬜
+              - generic [ref=e129]: 등산 월 1회
+          - generic [ref=e130]:
+            - generic [ref=e133] [cursor=pointer]: ✅ 완료
+            - generic [ref=e136] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e139] [cursor=pointer]:
+              - generic [ref=e141]: ⬜
+              - generic [ref=e142]: 홈트 루틴
+          - generic [ref=e143]:
+            - generic [ref=e146] [cursor=pointer]: ✅ 완료
+            - generic [ref=e149] [cursor=pointer]: 🗑️ 삭제
+            - generic [ref=e152] [cursor=pointer]:
+              - generic [ref=e154]: ⬜
+              - generic [ref=e155]: 플랭크 5분
+      - generic [ref=e156]: 셀을 탭하여 제목 수정 · 체크박스로 완료 처리
+      - generic [ref=e157]:
+        - generic [ref=e158]: ← 이전
+        - generic [ref=e160] [cursor=pointer]: 식단 관리 →
+      - generic [ref=e163] [cursor=pointer]:
+        - generic [ref=e164]: 📝 메모 및 세부사항
+        - generic [ref=e165]: ▼
+      - generic [ref=e167] [cursor=pointer]:
+        - generic [ref=e168]: 🔔 알림 설정
+        - generic [ref=e169]: ▼
+      - generic [ref=e171] [cursor=pointer]:
+        - generic [ref=e172]: 🔗 관련 링크 & 자료
+        - generic [ref=e173]: ▼
+    - generic [ref=e176] [cursor=pointer]: +
+```

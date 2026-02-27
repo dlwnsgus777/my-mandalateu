@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../types/navigation';
 import {
   View,
   Text,
@@ -14,8 +17,6 @@ import {
   ActivityIndicator,
   Linking,
 } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
-import { RootStackParamList } from '../../types/navigation';
 import { useMandalartStore } from '../../store/mandalartStore';
 import { useAuthStore } from '../../store/authStore';
 import { Colors } from '../../constants/colors';
@@ -29,9 +30,8 @@ const LEGAL_URLS = {
   privacyPolicy: 'https://my-mandalateu.com/privacy',
 } as const;
 
-type Props = StackScreenProps<RootStackParamList, 'Settings'>;
-
-export const SettingsScreen = ({ navigation }: Props) => {
+export const SettingsScreen = () => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const resetProject = useMandalartStore((state) => state.resetProject);
   const logout = useAuthStore((state) => state.logout);
   const updateNickname = useAuthStore((state) => state.updateNickname);
@@ -39,9 +39,11 @@ export const SettingsScreen = ({ navigation }: Props) => {
 
   const [isNicknameModalVisible, setIsNicknameModalVisible] = useState(false);
   const [nicknameInput, setNicknameInput] = useState('');
+  const [nicknameError, setNicknameError] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
   const [isResetModalVisible, setIsResetModalVisible] = useState(false);
+  const [isDeleteAccountModalVisible, setIsDeleteAccountModalVisible] = useState(false);
 
   const avatarLetter = user?.nickname?.charAt(0).toUpperCase() ?? '?';
 
@@ -62,25 +64,27 @@ export const SettingsScreen = ({ navigation }: Props) => {
 
   const handleNicknameChange = () => {
     setNicknameInput(user?.nickname ?? '');
+    setNicknameError('');
     setIsNicknameModalVisible(true);
   };
 
   const handleNicknameSubmit = async () => {
     const trimmed = nicknameInput.trim();
     if (!trimmed) {
-      Alert.alert('오류', '닉네임을 입력해주세요.');
+      setNicknameError('닉네임을 입력해주세요.');
       return;
     }
     if (trimmed.length > 50) {
-      Alert.alert('오류', '닉네임은 50자 이하로 입력해주세요.');
+      setNicknameError('닉네임은 50자 이하로 입력해주세요.');
       return;
     }
+    setNicknameError('');
     setIsUpdating(true);
     try {
       await updateNickname(trimmed);
       setIsNicknameModalVisible(false);
     } catch {
-      Alert.alert('오류', '닉네임 변경에 실패했습니다.');
+      setNicknameError('닉네임 변경에 실패했습니다.');
     } finally {
       setIsUpdating(false);
     }
@@ -95,16 +99,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
     }
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      '회원 탈퇴',
-      '탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.',
-      [
-        { text: '취소', style: 'cancel' },
-        { text: '탈퇴하기', style: 'destructive', onPress: () => Alert.alert('준비 중', '곧 제공될 예정입니다.') },
-      ],
-    );
-  };
+  const handleDeleteAccount = () => setIsDeleteAccountModalVisible(true);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -132,6 +127,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
                   <Text style={styles.modalCancelText}>취소</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  testID="logout-confirm-btn"
                   style={[styles.modalConfirmButton, styles.modalDestructiveButton]}
                   onPress={handleLogoutConfirm}
                 >
@@ -167,12 +163,50 @@ export const SettingsScreen = ({ navigation }: Props) => {
                   <Text style={styles.modalCancelText}>취소</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  testID="reset-confirm-btn"
                   style={[styles.modalConfirmButton, styles.modalDestructiveButton]}
                   onPress={handleResetConfirm}
                 >
                   <Text style={styles.modalConfirmText}>초기화</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 회원 탈퇴 확인 모달 */}
+      <Modal
+        visible={isDeleteAccountModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsDeleteAccountModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsDeleteAccountModalVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>회원 탈퇴</Text>
+              <Text style={styles.modalMessage}>탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.</Text>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setIsDeleteAccountModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="delete-account-confirm-btn"
+                  style={[styles.modalConfirmButton, styles.modalDestructiveButton, styles.modalButtonDisabled]}
+                  disabled
+                >
+                  <Text style={styles.modalConfirmText}>탈퇴하기</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.comingSoonText}>회원 탈퇴 기능은 곧 제공될 예정입니다.</Text>
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -195,9 +229,12 @@ export const SettingsScreen = ({ navigation }: Props) => {
               <View style={styles.modalCard}>
                 <Text style={styles.modalTitle}>닉네임 변경</Text>
                 <TextInput
-                  style={styles.modalInput}
+                  style={[styles.modalInput, !!nicknameError && styles.modalInputError]}
                   value={nicknameInput}
-                  onChangeText={setNicknameInput}
+                  onChangeText={(text) => {
+                    setNicknameInput(text);
+                    if (nicknameError) setNicknameError('');
+                  }}
                   placeholder="닉네임 입력"
                   placeholderTextColor={Colors.light.textDisabled}
                   maxLength={50}
@@ -205,6 +242,9 @@ export const SettingsScreen = ({ navigation }: Props) => {
                   returnKeyType="done"
                   onSubmitEditing={handleNicknameSubmit}
                 />
+                {!!nicknameError && (
+                  <Text style={styles.errorText}>{nicknameError}</Text>
+                )}
                 <View style={styles.modalActions}>
                   <TouchableOpacity
                     style={styles.modalCancelButton}
@@ -265,7 +305,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.row} onPress={handleLogout} activeOpacity={0.7}>
+          <TouchableOpacity testID="logout-btn" style={styles.row} onPress={handleLogout} activeOpacity={0.7}>
             <Text style={styles.destructiveText}>로그아웃</Text>
           </TouchableOpacity>
         </View>
@@ -273,7 +313,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
         {/* 섹션: DATA */}
         <Text style={styles.sectionHeader}>Data</Text>
         <View style={styles.section}>
-          <TouchableOpacity style={styles.row} onPress={handleReset} activeOpacity={0.7}>
+          <TouchableOpacity testID="reset-btn" style={styles.row} onPress={handleReset} activeOpacity={0.7}>
             <Text style={styles.destructiveText}>데이터 초기화</Text>
           </TouchableOpacity>
           <Text style={styles.descriptionText}>
@@ -516,7 +556,21 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     fontSize: FontSize.md,
     color: Colors.light.text,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  modalInputError: {
+    borderColor: Colors.light.priorityHigh,
+  },
+  errorText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.priorityHigh,
+    marginBottom: Spacing.sm,
+  },
+  comingSoonText: {
+    fontSize: FontSize.xs,
+    color: Colors.light.textDisabled,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
   },
   modalActions: {
     flexDirection: 'row',

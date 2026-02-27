@@ -51,9 +51,7 @@ test.describe('TC-08. 설정 화면', () => {
   test('TC-08-3. 로그아웃 버튼 클릭 시 확인 모달 표시', async ({ page }) => {
     await goToSettings(page);
 
-    // 좌표 기반 클릭: "로그아웃" 텍스트 요소의 중심점
-    const box = await page.getByText('로그아웃').boundingBox();
-    await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.getByTestId('logout-btn').click();
     await page.waitForTimeout(500);
 
     await expect(page.getByText('정말 로그아웃 하시겠습니까?')).toBeVisible();
@@ -63,7 +61,7 @@ test.describe('TC-08. 설정 화면', () => {
   test('TC-08-4. 로그아웃 취소 시 설정 화면 유지', async ({ page }) => {
     await goToSettings(page);
 
-    await page.getByText('로그아웃').click();
+    await page.getByTestId('logout-btn').click();
     await page.waitForTimeout(300);
 
     await expect(page.getByText('정말 로그아웃 하시겠습니까?')).toBeVisible();
@@ -82,13 +80,12 @@ test.describe('TC-08. 설정 화면', () => {
 
     await goToSettings(page);
 
-    await page.getByText('로그아웃').click();
+    await page.getByTestId('logout-btn').click();
     await page.waitForTimeout(300);
 
     await expect(page.getByText('정말 로그아웃 하시겠습니까?')).toBeVisible();
 
-    // 모달 내 "로그아웃" 확인 버튼 (두 번째 로그아웃 텍스트)
-    await page.getByText('로그아웃').last().click();
+    await page.getByTestId('logout-confirm-btn').click();
     await page.waitForTimeout(1500);
 
     await expect(page.getByText('MY MANDALATEU')).toBeVisible();
@@ -102,9 +99,9 @@ test.describe('TC-08. 설정 화면', () => {
 
     await goToSettings(page);
 
-    await page.getByText('로그아웃').click();
+    await page.getByTestId('logout-btn').click();
     await page.waitForTimeout(300);
-    await page.getByText('로그아웃').last().click();
+    await page.getByTestId('logout-confirm-btn').click();
     await page.waitForTimeout(1500);
 
     const authStorage = await page.evaluate(() => {
@@ -120,18 +117,18 @@ test.describe('TC-08. 설정 화면', () => {
   test('TC-08-7. 데이터 초기화 버튼 클릭 시 확인 모달 표시', async ({ page }) => {
     await goToSettings(page);
 
-    await page.getByText('데이터 초기화').click();
+    await page.getByTestId('reset-btn').click();
     await page.waitForTimeout(300);
 
     await expect(page.getByText('모든 데이터가 초기 상태로 돌아갑니다.')).toBeVisible();
     await expect(page.getByText('취소').first()).toBeVisible();
-    await expect(page.getByText('초기화')).toBeVisible();
+    await expect(page.getByTestId('reset-confirm-btn')).toBeVisible();
   });
 
   test('TC-08-8. 데이터 초기화 취소 시 설정 화면 유지', async ({ page }) => {
     await goToSettings(page);
 
-    await page.getByText('데이터 초기화').click();
+    await page.getByTestId('reset-btn').click();
     await page.waitForTimeout(300);
 
     await expect(page.getByText('모든 데이터가 초기 상태로 돌아갑니다.')).toBeVisible();
@@ -139,7 +136,109 @@ test.describe('TC-08. 설정 화면', () => {
     await page.getByText('취소').first().click();
     await page.waitForTimeout(300);
 
-    await expect(page.getByText('모든 데이터가 초기 상태로 돌아갑니다.', { exact: true })).not.toBeVisible();
+    await expect(page.getByText('모든 데이터가 초기 상태로 돌아갑니다.')).not.toBeVisible();
+    await expect(page.getByText('Account')).toBeVisible();
+  });
+
+  // ─── 닉네임 변경 ──────────────────────────────────────────────────────────
+
+  test('TC-08-9. 닉네임 변경 버튼 클릭 시 모달 표시', async ({ page }) => {
+    await goToSettings(page);
+
+    await page.getByText('닉네임 변경').click();
+    await page.waitForTimeout(300);
+
+    await expect(page.getByText('닉네임 변경', { exact: true }).nth(1)).toBeVisible();
+    await expect(page.getByPlaceholder('닉네임 입력')).toBeVisible();
+    await expect(page.getByText('변경')).toBeVisible();
+  });
+
+  test('TC-08-10. 닉네임 모달 - 현재 닉네임이 입력창에 채워짐', async ({ page }) => {
+    await goToSettings(page);
+
+    await page.getByText('닉네임 변경').click();
+    await page.waitForTimeout(300);
+
+    const input = page.getByPlaceholder('닉네임 입력');
+    await expect(input).toHaveValue('테스터');
+  });
+
+  test('TC-08-11. 닉네임 비운 채 변경 시 인라인 에러 표시', async ({ page }) => {
+    await goToSettings(page);
+
+    await page.getByText('닉네임 변경').click();
+    await page.waitForTimeout(300);
+
+    await page.getByPlaceholder('닉네임 입력').clear();
+    // exact: true - "닉네임 변경" 행/모달 제목이 아닌 "변경" 버튼만 클릭
+    await page.getByText('변경', { exact: true }).click();
+    await page.waitForTimeout(300);
+
+    await expect(page.getByText('닉네임을 입력해주세요.')).toBeVisible();
+    // 모달은 닫히지 않음
+    await expect(page.getByPlaceholder('닉네임 입력')).toBeVisible();
+  });
+
+  test('TC-08-12. 닉네임 변경 성공 후 모달 닫힘', async ({ page }) => {
+    await page.route('**/api/v1/users/me', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: 1, email: 'test@test.com', nickname: '새닉네임' }),
+      }),
+    );
+
+    await goToSettings(page);
+
+    await page.getByText('닉네임 변경').click();
+    await page.waitForTimeout(300);
+
+    await page.getByPlaceholder('닉네임 입력').clear();
+    await page.getByPlaceholder('닉네임 입력').fill('새닉네임');
+    await page.getByText('변경', { exact: true }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByPlaceholder('닉네임 입력')).not.toBeVisible();
+    await expect(page.getByText('새닉네임')).toBeVisible();
+  });
+
+  test('TC-08-13. 닉네임 변경 취소 → 모달 닫힘, 기존 닉네임 유지', async ({ page }) => {
+    await goToSettings(page);
+
+    await page.getByText('닉네임 변경').click();
+    await page.waitForTimeout(300);
+
+    await page.getByPlaceholder('닉네임 입력').clear();
+    await page.getByPlaceholder('닉네임 입력').fill('변경시도');
+    await page.getByText('취소').first().click();
+    await page.waitForTimeout(300);
+
+    await expect(page.getByPlaceholder('닉네임 입력')).not.toBeVisible();
+    // 원래 닉네임 유지
+    await expect(page.getByText('테스터')).toBeVisible();
+  });
+
+  // ─── 회원 탈퇴 모달 ───────────────────────────────────────────────────────
+
+  test('TC-08-14. 회원 탈퇴 클릭 시 모달 표시', async ({ page }) => {
+    await goToSettings(page);
+
+    await page.getByText('회원 탈퇴').click();
+    await page.waitForTimeout(300);
+
+    await expect(page.getByText('탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.')).toBeVisible();
+    await expect(page.getByText('탈퇴하기')).toBeVisible();
+  });
+
+  test('TC-08-15. 회원 탈퇴 모달 취소 → 설정 화면 유지', async ({ page }) => {
+    await goToSettings(page);
+
+    await page.getByText('회원 탈퇴').click();
+    await page.waitForTimeout(300);
+    await page.getByText('취소').first().click();
+    await page.waitForTimeout(300);
+
+    await expect(page.getByText('탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.')).not.toBeVisible();
     await expect(page.getByText('Account')).toBeVisible();
   });
 });
